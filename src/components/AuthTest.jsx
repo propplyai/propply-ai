@@ -66,7 +66,7 @@ const AuthTest = () => {
         if (error) throw error;
 
         const requiredTables = ['user_profiles', 'properties', 'compliance_reports'];
-        const existingTables = tables.map(t => t.table_name);
+        const existingTables = tables ? tables.map(t => t.table_name) : [];
         const missingTables = requiredTables.filter(table => !existingTables.includes(table));
 
         if (missingTables.length === 0) {
