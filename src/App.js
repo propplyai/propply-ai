@@ -1,0 +1,212 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from './config/supabase';
+import { authService } from './services/auth';
+import LandingPage from './components/LandingPage';
+import MVPDashboard from './components/MVPDashboard';
+import AuthDebug from './components/AuthDebug';
+// import AuthTest from './components/AuthTest';
+import './App.css';
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    
+    // Timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('Auth initialization timeout - forcing app to load');
+        setLoading(false);
+        setAuthError('Authentication timeout - please refresh the page');
+      }
+    }, 15000); // 15 second timeout for OAuth
+
+    // Get initial session and user profile
+    const initializeAuth = async () => {
+      try {
+        console.log('Initializing auth...');
+        
+        // Check if this is an OAuth callback
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        
+        if (authCode) {
+          console.log('OAuth callback detected, processing...');
+          // Clear the URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (session?.user) {
+          console.log('User found:', session.user.email);
+          
+          // Create user profile if it doesn't exist
+          const createResult = await authService.createUserProfile(session.user);
+          console.log('Profile creation result:', createResult);
+          
+          if (!mounted) return;
+          
+          // Get user profile with subscription info
+          const profileResult = await authService.getUserProfile(session.user.id);
+          console.log('Profile fetch result:', profileResult);
+          
+          if (!mounted) return;
+          
+          if (profileResult.success) {
+            setUser({
+              ...session.user,
+              profile: profileResult.data
+            });
+          } else {
+            // Even if profile fetch fails, set the user to avoid infinite loading
+            console.warn('Profile fetch failed, setting user without profile');
+            setUser(session.user);
+          }
+        } else {
+          console.log('No session found');
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (mounted) {
+          setAuthError(error.message);
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
+          console.log('Auth initialization complete');
+          clearTimeout(loadingTimeout);
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
+      console.log('Auth state change:', event, session?.user?.email);
+      
+      if (session?.user) {
+        try {
+          // Create user profile if it doesn't exist (important for OAuth users)
+          const createResult = await authService.createUserProfile(session.user);
+          console.log('Auth state change - Profile creation:', createResult);
+          
+          if (!mounted) return;
+          
+          // Get user profile when user signs in
+          const profileResult = await authService.getUserProfile(session.user.id);
+          console.log('Auth state change - Profile fetch:', profileResult);
+          
+          if (!mounted) return;
+          
+          if (profileResult.success) {
+            setUser({
+              ...session.user,
+              profile: profileResult.data
+            });
+          } else {
+            // Set user even if profile fails to avoid infinite loading
+            console.warn('Auth state change - Profile fetch failed, setting user without profile');
+            setUser(session.user);
+          }
+        } catch (error) {
+          console.error('Auth state change error:', error);
+          if (mounted) {
+            // Set user even if there's an error to avoid infinite loading
+            setUser(session.user);
+          }
+        }
+      } else {
+        if (mounted) {
+          setUser(null);
+        }
+      }
+      
+      if (mounted) {
+        clearTimeout(loadingTimeout);
+        setLoading(false);
+      }
+    });
+    
+    return () => {
+      mounted = false;
+      clearTimeout(loadingTimeout);
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogin = async (userData) => {
+    // Get user profile after login
+    if (userData?.id) {
+      const profileResult = await authService.getUserProfile(userData.id);
+      if (profileResult.success) {
+        setUser({
+          ...userData,
+          profile: profileResult.data
+        });
+      } else {
+        setUser(userData);
+      }
+    } else {
+      setUser(userData);
+    }
+  };
+
+  const handleLogout = async () => {
+    const result = await authService.signOut();
+    if (result.success) {
+      setUser(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          </div>
+          <p className="text-gray-600 text-lg font-medium">Loading Propply AI...</p>
+          {authError && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              <p className="text-sm">{authError}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Refresh Page
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="App">
+      <AuthDebug />
+      {/* Uncomment the line below to show auth test component for debugging */}
+      {/* <AuthTest /> */}
+      {user ? (
+        <MVPDashboard user={user} onLogout={handleLogout} />
+      ) : (
+        <LandingPage onLogin={handleLogin} />
+      )}
+    </div>
+  );
+}
+
+export default App;
