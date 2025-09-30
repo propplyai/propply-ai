@@ -33,12 +33,18 @@ function App() {
         const authCode = urlParams.get('code');
         
         if (authCode) {
-          console.log('OAuth callback detected, processing...');
-          // Clear the URL parameters
-          window.history.replaceState({}, document.title, window.location.pathname);
+          console.log('OAuth callback detected, waiting for session...');
+          // Give Supabase time to exchange the code for a session
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
         const { data: { session } } = await supabase.auth.getSession();
+        
+        // Clear URL parameters after getting session
+        if (authCode && session) {
+          console.log('OAuth session established, cleaning URL...');
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
         
         if (!mounted) return;
         
