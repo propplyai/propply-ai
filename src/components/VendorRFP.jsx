@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../config/supabase';
 import {
-  Users, FileText, Send, Plus, Search, Filter, Building, Phone, Mail, Globe,
+  FileText, Plus, Search, Building,
   Star, CheckCircle, Clock, DollarSign, Calendar, Eye, Edit, Trash2, X
 } from 'lucide-react';
 
@@ -26,9 +26,9 @@ const VendorRFP = ({ user, properties }) => {
     fetchVendors();
     fetchRfps();
     fetchComplianceSystems();
-  }, []);
+  }, [fetchVendors, fetchRfps, fetchComplianceSystems]);
 
-  const fetchVendors = async () => {
+  const fetchVendors = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -43,9 +43,9 @@ const VendorRFP = ({ user, properties }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchRfps = async () => {
+  const fetchRfps = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('rfps')
@@ -58,9 +58,9 @@ const VendorRFP = ({ user, properties }) => {
     } catch (error) {
       console.error('Error fetching RFPs:', error);
     }
-  };
+  }, [user.id]);
 
-  const fetchComplianceSystems = async () => {
+  const fetchComplianceSystems = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('compliance_systems')
@@ -72,7 +72,7 @@ const VendorRFP = ({ user, properties }) => {
     } catch (error) {
       console.error('Error fetching compliance systems:', error);
     }
-  };
+  }, []);
 
   const createRFP = async (e) => {
     e.preventDefault();
@@ -114,6 +114,8 @@ const VendorRFP = ({ user, properties }) => {
     }
   };
 
+  // Function to send RFP to selected vendors
+  // eslint-disable-next-line no-unused-vars
   const sendRFPToVendors = async (rfpId, selectedVendors) => {
     try {
       setLoading(true);

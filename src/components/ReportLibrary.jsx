@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../config/supabase';
 import {
-  FileText, Download, Eye, Calendar, DollarSign, Clock, AlertTriangle,
-  CheckCircle, X, Plus, Search, Filter, Building, RefreshCw
+  FileText, Download, Eye, Calendar, DollarSign, Clock,
+  X, Plus, Search, Building, RefreshCw
 } from 'lucide-react';
 
 const ReportLibrary = ({ user, properties }) => {
@@ -16,9 +16,9 @@ const ReportLibrary = ({ user, properties }) => {
 
   useEffect(() => {
     fetchPurchasedReports();
-  }, [user]);
+  }, [user, fetchPurchasedReports]);
 
-  const fetchPurchasedReports = async () => {
+  const fetchPurchasedReports = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -41,7 +41,7 @@ const ReportLibrary = ({ user, properties }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id]);
 
   const purchaseReport = async (propertyId, reportType, purchaseType = 'single_report') => {
     try {

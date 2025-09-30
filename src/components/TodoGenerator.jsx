@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../config/supabase';
 import {
   Calendar, Plus, CheckCircle, Clock, AlertTriangle, Building, Users,
-  Search, Filter, Eye, Edit, Trash2, X, BarChart3, TrendingUp
+  Search, Edit, Trash2, X, BarChart3, TrendingUp
 } from 'lucide-react';
 
 const TodoGenerator = ({ user, properties }) => {
@@ -23,9 +23,9 @@ const TodoGenerator = ({ user, properties }) => {
 
   useEffect(() => {
     fetchTodos();
-  }, [user]);
+  }, [user, fetchTodos]);
 
-  const fetchTodos = async () => {
+  const fetchTodos = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -48,7 +48,7 @@ const TodoGenerator = ({ user, properties }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id]);
 
   const createTodo = async (e) => {
     e.preventDefault();

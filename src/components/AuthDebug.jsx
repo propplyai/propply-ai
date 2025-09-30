@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { supabase } from '../config/supabase';
-import { authService } from '../services/auth';
 
 const AuthDebug = () => {
   const [testResult, setTestResult] = useState('');

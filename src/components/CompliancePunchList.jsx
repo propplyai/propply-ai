@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../config/supabase';
 import {
   CheckCircle, X, RotateCcw, Building, Calendar, DollarSign, AlertTriangle,
@@ -18,39 +18,7 @@ const CompliancePunchList = ({ user, properties }) => {
   const [dragStartX, setDragStartX] = useState(0);
   const [dragCurrentX, setDragCurrentX] = useState(0);
 
-  // Fetch compliance systems and property-specific selections
-  useEffect(() => {
-    fetchComplianceSystems();
-  }, []);
-
-  useEffect(() => {
-    if (selectedProperty) {
-      fetchPropertyComplianceSystems();
-    }
-  }, [selectedProperty]);
-
-  useEffect(() => {
-    filterSystems();
-  }, [complianceSystems, propertyComplianceSystems, searchTerm, selectedCategory, showRemoved]);
-
-  const fetchComplianceSystems = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('compliance_systems')
-        .select('*')
-        .order('category', { ascending: true });
-
-      if (error) throw error;
-      setComplianceSystems(data || []);
-    } catch (error) {
-      console.error('Error fetching compliance systems:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPropertyComplianceSystems = async () => {
+  const fetchPropertyComplianceSystems = useCallback(async () => {
     if (!selectedProperty) return;
 
     try {
@@ -64,9 +32,9 @@ const CompliancePunchList = ({ user, properties }) => {
     } catch (error) {
       console.error('Error fetching property compliance systems:', error);
     }
-  };
+  }, [selectedProperty]);
 
-  const filterSystems = () => {
+  const filterSystems = useCallback(() => {
     let filtered = complianceSystems.filter(system => {
       // Filter by property city
       if (selectedProperty && !system.applicable_locales.includes(selectedProperty.city)) {
@@ -79,7 +47,6 @@ const CompliancePunchList = ({ user, properties }) => {
         return false;
       }
 
-      // Filter by category
       if (selectedCategory !== 'all' && system.category !== selectedCategory) {
         return false;
       }
@@ -95,8 +62,37 @@ const CompliancePunchList = ({ user, properties }) => {
       }
     });
 
-    setFilteredSystems(filtered);
-  };
+  useEffect(() => {
+    if (selectedProperty) {
+      fetchPropertyComplianceSystems();
+    }
+  }, [selectedProperty, fetchPropertyComplianceSystems]);
+
+  useEffect(() => {
+    filterSystems();
+  }, [complianceSystems, propertyComplianceSystems, searchTerm, selectedCategory, showRemoved, filterSystems]);
+
+  const fetchComplianceSystems = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('compliance_systems')
+        .select('*')
+        .order('category', { ascending: true });
+
+      if (error) throw error;
+      setComplianceSystems(data || []);
+    } catch (error) {
+      console.error('Error fetching compliance systems:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch compliance systems and property-specific selections
+  useEffect(() => {
+    fetchComplianceSystems();
+  }, [fetchComplianceSystems]);
 
   const toggleComplianceSystem = async (systemKey, selected) => {
     if (!selectedProperty) return;

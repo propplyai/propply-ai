@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase, APP_CONFIG } from '../config/supabase';
 import {
   Building, Users, BarChart3, Calendar, Plus, Search, Eye,
@@ -36,9 +36,9 @@ const MVPDashboard = ({ user, onLogout }) => {
   useEffect(() => {
     fetchUserProfile();
     fetchProperties();
-  }, [user]);
+  }, [fetchUserProfile, fetchProperties]);
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -51,9 +51,9 @@ const MVPDashboard = ({ user, onLogout }) => {
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
-  };
+  }, [user.id]);
 
-  const fetchProperties = async () => {
+  const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -69,7 +69,7 @@ const MVPDashboard = ({ user, onLogout }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id]);
 
   const handleAddProperty = async (e) => {
     e.preventDefault();
