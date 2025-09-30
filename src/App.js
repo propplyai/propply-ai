@@ -38,14 +38,14 @@ function App() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     
-    // Timeout to prevent infinite loading (increased for OAuth)
+    // Timeout to prevent infinite loading
     const loadingTimeout = setTimeout(() => {
       if (mounted && !timeoutCleared) {
         console.warn('Auth initialization timeout - forcing app to load');
         setLoading(false);
         setAuthError('Authentication timeout - please refresh the page');
       }
-    }, 20000); // 20 second timeout for OAuth
+    }, 5000); // 5 second timeout
     
     const clearLoadingTimeout = () => {
       timeoutCleared = true;
@@ -76,13 +76,7 @@ function App() {
         if (session?.user) {
           console.log('User found:', session.user.email);
           
-          // Create user profile if it doesn't exist
-          const createResult = await authService.createUserProfile(session.user);
-          console.log('Profile creation result:', createResult);
-          
-          if (!mounted) return;
-          
-          // Get user profile with subscription info
+          // Get user profile (database trigger should have created it)
           const profileResult = await authService.getUserProfile(session.user.id);
           console.log('Profile fetch result:', profileResult);
           
@@ -94,9 +88,10 @@ function App() {
               profile: profileResult.data
             });
           } else {
-            // Even if profile fetch fails, set the user to avoid infinite loading
-            console.warn('Profile fetch failed, setting user without profile');
-            setUser(session.user);
+            // Profile doesn't exist, create it quickly and continue
+            console.warn('Profile not found, creating and continuing...');
+            authService.createUserProfile(session.user); // Don't wait
+            setUser(session.user); // Set user immediately without profile
           }
         } else {
           console.log('No session found');
@@ -139,9 +134,6 @@ function App() {
         }
         
         try {
-          // Wait a bit for database trigger
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
           // Get user profile when user signs in
           const profileResult = await authService.getUserProfile(session.user.id);
           console.log('Auth state change - Profile fetch:', profileResult);
@@ -155,24 +147,10 @@ function App() {
               profile: profileResult.data
             });
           } else {
-            // Profile doesn't exist yet, try to create it
-            console.log('Auth state change - Profile not found, creating...');
-            await authService.createUserProfile(session.user);
-            
-            if (!mounted) return;
-            
-            // Try fetching again
-            const retryResult = await authService.getUserProfile(session.user.id);
-            if (retryResult.success) {
-              setUser({
-                ...session.user,
-                profile: retryResult.data
-              });
-            } else {
-              // Set user even if profile fails to avoid infinite loading
-              console.warn('Auth state change - Profile fetch failed after retry, setting user without profile');
-              setUser(session.user);
-            }
+            // Profile doesn't exist, create it in background and continue
+            console.log('Auth state change - Profile not found, creating in background...');
+            authService.createUserProfile(session.user); // Don't wait
+            setUser(session.user); // Set user immediately
           }
         } catch (error) {
           console.error('Auth state change error:', error);
@@ -209,32 +187,11 @@ function App() {
     console.log('handleLogin: Setting initialTab to profile');
     setInitialTab('profile');
     
-    // Get user profile after login with retry logic
+    // Get user profile after login
     if (userData?.id) {
       console.log('handleLogin: Fetching profile for user:', userData.id);
       
-      // Wait a moment for database trigger to create profile if this is a new user
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      let retries = 3;
-      let profileResult = null;
-      
-      while (retries > 0 && !profileResult?.success) {
-        profileResult = await authService.getUserProfile(userData.id);
-        
-        if (!profileResult.success) {
-          console.log(`handleLogin: Profile fetch failed, retrying... (${3 - retries + 1}/3)`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          retries--;
-        }
-      }
-      
-      // If profile still doesn't exist, create it manually
-      if (!profileResult?.success) {
-        console.log('handleLogin: Profile not found after retries, creating...');
-        await authService.createUserProfile(userData);
-        profileResult = await authService.getUserProfile(userData.id);
-      }
+      const profileResult = await authService.getUserProfile(userData.id);
       
       if (profileResult.success) {
         console.log('handleLogin: Profile loaded successfully:', profileResult.data);
@@ -243,8 +200,10 @@ function App() {
           profile: profileResult.data
         });
       } else {
-        console.warn('handleLogin: Could not load profile, setting user without profile');
-        setUser(userData);
+        // Profile doesn't exist, create it in background
+        console.warn('handleLogin: Profile not found, creating in background...');
+        authService.createUserProfile(userData); // Don't wait
+        setUser(userData); // Set user immediately
       }
     } else {
       setUser(userData);
