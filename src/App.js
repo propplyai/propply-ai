@@ -106,41 +106,32 @@ function App() {
           console.log('OAuth callback detected with code:', authCode.substring(0, 20) + '...');
           console.log('Current URL:', window.location.href);
           
-          // DON'T clean URL yet - let Supabase process it first
+          // Exchange the code for a session
+          // Supabase will automatically handle PKCE verification and store the session
+          console.log('Exchanging OAuth code for session...');
+          const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
           
-          // Try to exchange code for session multiple times
-          let session = null;
-          let attempts = 0;
-          const maxAttempts = 5;
-          
-          while (!session && attempts < maxAttempts && mounted) {
-            attempts++;
-            console.log(`Attempt ${attempts}/${maxAttempts}: Exchanging code for session...`);
-            
-            const { data, error } = await supabase.auth.getSession();
-            
-            if (error) {
-              console.error('Session exchange error:', error);
-            }
-            
-            if (data?.session) {
-              session = data.session;
-              console.log('✅ Session established for:', session.user.email);
-              break;
-            }
-            
-            // Wait before next attempt (exponential backoff)
-            // Capture attempts value to avoid closure issue in loop
-            const waitTime = 500 * attempts;
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-          }
-
-          // Clean the URL after session is established (or failed)
+          // Clean the URL immediately after exchange attempt
           window.history.replaceState({}, document.title, window.location.pathname);
 
           if (!mounted) return;
 
-          if (session?.user) {
+          if (error) {
+            console.error('❌ OAuth code exchange failed:', error);
+            console.error('Error details:', {
+              message: error.message,
+              status: error.status,
+              name: error.name
+            });
+            setAuthError(`Failed to complete Google sign-in: ${error.message}`);
+            clearLoadingTimeout();
+            setLoading(false);
+            return;
+          }
+
+          if (data?.session?.user) {
+            const session = data.session;
+            console.log('✅ OAuth session established for:', session.user.email);
             setInitialTab('profile');
 
             // Wait for profile to be created by trigger
@@ -154,12 +145,8 @@ function App() {
               setUser(session.user);
             }
           } else {
-            console.error('❌ Failed to establish session after', attempts, 'attempts');
-            console.error('This may be due to:');
-            console.error('- Third-party cookies being blocked');
-            console.error('- PKCE code verifier not persisting');
-            console.error('- Supabase Site URL mismatch');
-            setAuthError('Failed to complete Google sign-in. Please try again or use email/password.');
+            console.error('❌ No session returned from code exchange');
+            setAuthError('Failed to complete Google sign-in. Please try again.');
           }
 
           if (mounted) {
