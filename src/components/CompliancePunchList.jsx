@@ -62,6 +62,9 @@ const CompliancePunchList = ({ user, properties }) => {
       }
     });
 
+    setFilteredSystems(filtered);
+  }, [complianceSystems, propertyComplianceSystems, searchTerm, selectedCategory, showRemoved, selectedProperty]);
+
   useEffect(() => {
     if (selectedProperty) {
       fetchPropertyComplianceSystems();

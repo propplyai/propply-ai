@@ -13,9 +13,9 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "dev": "react-scripts start",
-    "serve": "serve -s build -l ${PORT:-3000}",
+    "serve": "serve -s build -l 3000",
     "railway:start": "npm run serve",
-    "postinstall": "npm run build"
+    "postbuild": "echo 'Build complete'"
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.9.0",
