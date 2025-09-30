@@ -26,7 +26,8 @@ const VendorRFP = ({ user, properties }) => {
     fetchVendors();
     fetchRfps();
     fetchComplianceSystems();
-  }, [fetchVendors, fetchRfps, fetchComplianceSystems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchVendors = useCallback(async () => {
     try {

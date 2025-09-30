@@ -36,7 +36,8 @@ const MVPDashboard = ({ user, onLogout }) => {
   useEffect(() => {
     fetchUserProfile();
     fetchProperties();
-  }, [fetchUserProfile, fetchProperties]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchUserProfile = useCallback(async () => {
     try {

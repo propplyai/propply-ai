@@ -16,7 +16,8 @@ const ReportLibrary = ({ user, properties }) => {
 
   useEffect(() => {
     fetchPurchasedReports();
-  }, [user, fetchPurchasedReports]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const fetchPurchasedReports = useCallback(async () => {
     try {

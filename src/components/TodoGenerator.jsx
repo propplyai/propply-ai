@@ -23,7 +23,8 @@ const TodoGenerator = ({ user, properties }) => {
 
   useEffect(() => {
     fetchTodos();
-  }, [user, fetchTodos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const fetchTodos = useCallback(async () => {
     try {
