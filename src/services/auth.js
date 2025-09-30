@@ -89,8 +89,8 @@ export const authService = {
     try {
       console.log('Attempting to sign in with Google');
       
-      // Use current origin with ?tab=profile to redirect to profile after OAuth
-      const redirectUrl = `${window.location.origin}?tab=profile`;
+      // Use current origin for redirect - App.js will handle profile redirect on OAuth callback
+      const redirectUrl = window.location.origin;
 
       console.log('Using redirect URL:', redirectUrl);
       
