@@ -86,10 +86,8 @@ export const authService = {
     try {
       console.log('Attempting to sign in with Google');
       
-      // Determine redirect URL based on environment
-      const redirectUrl = window.location.href.includes('ngrok') 
-        ? window.location.origin 
-        : window.location.origin;
+      // Use current origin for redirect (works for localhost, production, etc.)
+      const redirectUrl = window.location.origin;
 
       console.log('Using redirect URL:', redirectUrl);
       

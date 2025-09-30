@@ -3,8 +3,7 @@ import { supabase } from './config/supabase';
 import { authService } from './services/auth';
 import LandingPage from './components/LandingPage';
 import MVPDashboard from './components/MVPDashboard';
-import AuthDebug from './components/AuthDebug';
-// import AuthTest from './components/AuthTest';
+// Debug components removed for production
 import './App.css';
 
 function App() {
@@ -197,9 +196,6 @@ function App() {
 
   return (
     <div className="App">
-      <AuthDebug />
-      {/* Uncomment the line below to show auth test component for debugging */}
-      {/* <AuthTest /> */}
       {user ? (
         <MVPDashboard user={user} onLogout={handleLogout} />
       ) : (
