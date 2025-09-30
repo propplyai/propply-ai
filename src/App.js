@@ -118,6 +118,12 @@ function App() {
       
       if (session?.user) {
         try {
+          // Redirect to profile on SIGNED_IN event (new login/signup)
+          if (event === 'SIGNED_IN') {
+            console.log('User signed in, redirecting to profile');
+            setInitialTab('profile');
+          }
+          
           // Create user profile if it doesn't exist (important for OAuth users)
           const createResult = await authService.createUserProfile(session.user);
           console.log('Auth state change - Profile creation:', createResult);
