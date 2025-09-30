@@ -12,6 +12,11 @@ function App() {
   const [authError, setAuthError] = useState(null);
   const [initialTab, setInitialTab] = useState('dashboard');
 
+  // Debug initialTab changes
+  useEffect(() => {
+    console.log('App: initialTab changed to:', initialTab);
+  }, [initialTab]);
+
   useEffect(() => {
     let mounted = true;
     let timeoutCleared = false;
@@ -224,6 +229,11 @@ function App() {
         </div>
       </div>
     );
+  }
+
+  // Log when rendering with user
+  if (user) {
+    console.log('App: Rendering MVPDashboard with initialTab:', initialTab);
   }
 
   return (

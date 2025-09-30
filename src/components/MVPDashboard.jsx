@@ -35,8 +35,14 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
 
   // Update activeTab when initialTab prop changes
   useEffect(() => {
+    console.log('MVPDashboard: initialTab changed to:', initialTab);
     setActiveTab(initialTab);
   }, [initialTab]);
+
+  // Log activeTab changes for debugging
+  useEffect(() => {
+    console.log('MVPDashboard: activeTab is now:', activeTab);
+  }, [activeTab]);
 
   // Fetch user profile and properties
   useEffect(() => {
