@@ -33,6 +33,11 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
     managementCompany: ''
   });
 
+  // Update activeTab when initialTab prop changes
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   // Fetch user profile and properties
   useEffect(() => {
     fetchUserProfile();

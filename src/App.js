@@ -167,6 +167,11 @@ function App() {
   }, []);
 
   const handleLogin = async (userData, redirectToProfile = true) => {
+    // Set initial tab first before setting user
+    if (redirectToProfile) {
+      setInitialTab('profile');
+    }
+    
     // Get user profile after login
     if (userData?.id) {
       const profileResult = await authService.getUserProfile(userData.id);
@@ -178,11 +183,6 @@ function App() {
       } else {
         setUser(userData);
       }
-      
-      // Redirect to profile after first login/signup
-      if (redirectToProfile) {
-        setInitialTab('profile');
-      }
     } else {
       setUser(userData);
     }
@@ -192,6 +192,7 @@ function App() {
     const result = await authService.signOut();
     if (result.success) {
       setUser(null);
+      setInitialTab('dashboard'); // Reset for next login
     }
   };
 
