@@ -28,6 +28,16 @@ function App() {
       setInitialTab('profile');
     }
     
+    // Check if this is an OAuth callback
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    if (accessToken) {
+      console.log('OAuth callback detected, waiting for auth state change...');
+      setInitialTab('profile'); // Redirect to profile after OAuth
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
     // Timeout to prevent infinite loading (increased for OAuth)
     const loadingTimeout = setTimeout(() => {
       if (mounted && !timeoutCleared) {
