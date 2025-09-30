@@ -16,23 +16,13 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     persistSession: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'propply-auth',
     debug: process.env.NODE_ENV === 'development'
   },
   global: {
     headers: {
       'X-Client-Info': 'propply-ai-web'
-    },
-    fetch: (url, options = {}) => {
-      // Add CORS headers for development
-      if (process.env.NODE_ENV === 'development') {
-        options.headers = {
-          ...options.headers,
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey'
-        };
-      }
-      return fetch(url, options);
     }
   }
 });
