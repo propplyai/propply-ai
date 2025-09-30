@@ -84,11 +84,23 @@ const LandingPage = ({ onLogin }) => {
 
     try {
       console.log('Starting Google OAuth...');
+      console.log('Browser allows popups:', !window.navigator.userAgent.includes('Headless'));
+      
       const result = await authService.signInWithGoogle();
       
+      console.log('OAuth result:', result);
+      
       if (result.success) {
-        console.log('Google OAuth initiated successfully');
+        console.log('Google OAuth initiated successfully - redirecting to Google...');
         // The redirect should happen automatically
+        // If still here after 2 seconds, something went wrong
+        setTimeout(() => {
+          if (!window.location.href.includes('accounts.google.com')) {
+            console.warn('Redirect did not happen - check if popups are blocked');
+            setError('Popup blocked? Please allow popups for this site and try again.');
+            setLoading(false);
+          }
+        }, 2000);
       } else {
         throw new Error(result.error);
       }
@@ -96,11 +108,13 @@ const LandingPage = ({ onLogin }) => {
       console.error('Google OAuth error:', error);
       
       if (error.message?.includes('Provider not found')) {
-        setError('Google authentication is not configured. Please contact support.');
+        setError('Google authentication is not configured in Supabase. Please use email/password or contact support.');
       } else if (error.message?.includes('Invalid provider')) {
-        setError('Google authentication is not available. Please use email/password.');
+        setError('Google provider is disabled. Please use email/password login.');
+      } else if (error.message?.includes('popup')) {
+        setError('Popup blocked! Please allow popups for this site and try again.');
       } else {
-        setError(error.message || 'Failed to sign in with Google. Please try again.');
+        setError(error.message || 'Failed to start Google sign-in. Please check console for details.');
       }
       
       setLoading(false);
