@@ -39,16 +39,14 @@ function App() {
         const authCode = urlParams.get('code');
         
         if (authCode) {
-          console.log('OAuth callback detected, processing session...');
+          console.log('OAuth callback detected, waiting for auth state change...');
+          // Don't proceed - let onAuthStateChange handle it
+          // Just clean the URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return; // Exit and let onAuthStateChange handle the session
         }
         
         const { data: { session } } = await supabase.auth.getSession();
-        
-        // Clear URL parameters after getting session
-        if (authCode) {
-          console.log('Cleaning OAuth URL parameters...');
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
         
         if (!mounted) return;
         
@@ -88,7 +86,11 @@ function App() {
           setUser(null);
         }
       } finally {
-        if (mounted) {
+        // Don't set loading false here if we have an OAuth code - let onAuthStateChange do it
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        
+        if (mounted && !authCode) {
           console.log('Auth initialization complete');
           clearLoadingTimeout();
           setLoading(false);
