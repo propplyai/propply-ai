@@ -4,15 +4,16 @@ import {
   Building, Users, BarChart3, Calendar, Plus, Search, Eye,
   ArrowUpDown, CheckCircle, AlertTriangle, TrendingUp, Bell, Settings,
   Sparkles, MapPin, X, Menu, FileText, Home, Phone, Briefcase,
-  ChevronDown, MoreVertical, Award, Globe
+  ChevronDown, MoreVertical, Award, Globe, User
 } from 'lucide-react';
 import CompliancePunchList from './CompliancePunchList';
 import VendorRFP from './VendorRFP';
 import ReportLibrary from './ReportLibrary';
 import TodoGenerator from './TodoGenerator';
+import UserProfile from './UserProfile';
 
-const MVPDashboard = ({ user, onLogout }) => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [properties, setProperties] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -146,6 +147,7 @@ const MVPDashboard = ({ user, onLogout }) => {
 
   const navigationTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, gradient: 'from-blue-500 to-cyan-500' },
+    { id: 'profile', label: 'My Profile', icon: User, gradient: 'from-pink-500 to-rose-500' },
     { id: 'compliance', label: 'Compliance Punch List', icon: CheckCircle, gradient: 'from-green-500 to-emerald-500' },
     { id: 'vendors', label: 'Vendor RFPs', icon: Users, gradient: 'from-purple-500 to-pink-500' },
     { id: 'reports', label: 'Report Library', icon: FileText, gradient: 'from-orange-500 to-red-500' },
@@ -193,19 +195,27 @@ const MVPDashboard = ({ user, onLogout }) => {
                   3
                 </span>
               </button>
-              <button className="p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/20 hover:bg-white/80 transition-all duration-300 group">
+              <button 
+                onClick={() => setActiveTab('profile')}
+                className="p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/20 hover:bg-white/80 transition-all duration-300 group"
+                title="Settings"
+              >
                 <Settings className="h-5 w-5 text-gray-700 group-hover:text-blue-600 transition-colors" />
               </button>
-              <div className="relative">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className="relative cursor-pointer"
+                title="View Profile"
+              >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl blur opacity-75"></div>
                 <div className="relative h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                   {userProfile?.avatar_url ? (
                     <img src={userProfile.avatar_url} alt="Avatar" className="h-8 w-8 rounded-lg" />
                   ) : (
-                    <Users className="h-5 w-5 text-white" />
+                    <User className="h-5 w-5 text-white" />
                   )}
                 </div>
-              </div>
+              </button>
               <button
                 onClick={onLogout}
                 className="text-gray-600 hover:text-red-600 transition-colors font-medium"
@@ -541,6 +551,7 @@ const MVPDashboard = ({ user, onLogout }) => {
             )}
 
             {/* Other Tabs */}
+            {activeTab === 'profile' && <UserProfile user={user} onProfileUpdate={fetchUserProfile} />}
             {activeTab === 'compliance' && <CompliancePunchList user={user} properties={properties} />}
             {activeTab === 'vendors' && <VendorRFP user={user} properties={properties} />}
             {activeTab === 'reports' && <ReportLibrary user={user} properties={properties} />}

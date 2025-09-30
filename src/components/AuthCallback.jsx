@@ -35,9 +35,9 @@ const AuthCallback = () => {
             console.log('Profile result:', profileResult);
           }
           
-          // Redirect to dashboard after a short delay
+          // Redirect to dashboard with profile tab after a short delay
           setTimeout(() => {
-            navigate('/', { replace: true });
+            navigate('/?tab=profile', { replace: true });
           }, 2000);
         } else {
           console.log('No session found');

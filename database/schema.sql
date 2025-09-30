@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     full_name TEXT,
     company TEXT,
     phone TEXT,
+    job_title TEXT,
+    address TEXT,
+    avatar_url TEXT,
     
     -- Subscription information
     subscription_tier TEXT DEFAULT 'free' CHECK (subscription_tier IN ('free', 'single_location_one_time', 'single_location_monthly', 'multiple_locations_ongoing', 'enterprise_yearly')),

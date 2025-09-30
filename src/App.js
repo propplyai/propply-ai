@@ -10,10 +10,18 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
+  const [initialTab, setInitialTab] = useState('dashboard');
 
   useEffect(() => {
     let mounted = true;
     let timeoutCleared = false;
+    
+    // Check for tab parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam === 'profile') {
+      setInitialTab('profile');
+    }
     
     // Timeout to prevent infinite loading (increased for OAuth)
     const loadingTimeout = setTimeout(() => {
@@ -158,7 +166,7 @@ function App() {
     };
   }, []);
 
-  const handleLogin = async (userData) => {
+  const handleLogin = async (userData, redirectToProfile = true) => {
     // Get user profile after login
     if (userData?.id) {
       const profileResult = await authService.getUserProfile(userData.id);
@@ -169,6 +177,11 @@ function App() {
         });
       } else {
         setUser(userData);
+      }
+      
+      // Redirect to profile after first login/signup
+      if (redirectToProfile) {
+        setInitialTab('profile');
       }
     } else {
       setUser(userData);
@@ -209,7 +222,7 @@ function App() {
   return (
     <div className="App">
       {user ? (
-        <MVPDashboard user={user} onLogout={handleLogout} />
+        <MVPDashboard user={user} onLogout={handleLogout} initialTab={initialTab} />
       ) : (
         <LandingPage onLogin={handleLogin} />
       )}
