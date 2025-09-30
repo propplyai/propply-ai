@@ -93,7 +93,7 @@ export const authService = {
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.includes('auth-token') || key.includes('propply-auth')) {
+        if (key && (key.includes('auth-token') || key.includes('propply-auth'))) {
           keysToRemove.push(key);
         }
       }
