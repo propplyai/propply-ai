@@ -5,6 +5,7 @@ Modern Flask web application for property compliance management
 """
 
 from flask import Flask, render_template, request, jsonify, send_file
+from flask_cors import CORS
 import json
 import os
 import uuid
@@ -17,8 +18,10 @@ from philly_property_finder import search_property_by_address as philly_search_p
 from mechanical_systems_client import MechanicalSystemsClient
 from ai_compliance_analyzer import AIComplianceAnalyzer
 from simple_vendor_marketplace import SimpleVendorMarketplace
+from stripe_service import stripe_service
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
+CORS(app)  # Enable CORS for React frontend
 
 # Initialize AI analyzer
 ai_analyzer = AIComplianceAnalyzer()
@@ -624,10 +627,172 @@ def vendor_marketplace_page():
 def api_health_check():
     """Health check endpoint"""
     return jsonify({
-        'status': 'healthy', 
+        'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
         'version': '2.0'
     })
+
+# ============================================
+# STRIPE PAYMENT ENDPOINTS
+# ============================================
+
+@app.route('/api/stripe/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    """Create a Stripe checkout session for subscription or one-time payment"""
+    try:
+        data = request.get_json()
+
+        # Extract required fields
+        tier_id = data.get('tier_id')
+        user_id = data.get('user_id')
+        user_email = data.get('user_email')
+        price_id = data.get('price_id')
+        mode = data.get('mode', 'subscription')  # 'subscription' or 'payment'
+        property_data = data.get('property_data')
+
+        if not all([tier_id, user_id, user_email, price_id]):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        # Create checkout session
+        result = stripe_service.create_checkout_session(
+            price_id=price_id,
+            customer_email=user_email,
+            user_id=user_id,
+            tier_id=tier_id,
+            mode=mode,
+            property_data=property_data
+        )
+
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"Error creating checkout session: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stripe/create-portal-session', methods=['POST'])
+def create_portal_session():
+    """Create a customer portal session for managing subscriptions"""
+    try:
+        data = request.get_json()
+        customer_id = data.get('customer_id')
+        return_url = data.get('return_url')
+
+        if not customer_id:
+            return jsonify({'error': 'customer_id is required'}), 400
+
+        result = stripe_service.create_customer_portal_session(
+            customer_id=customer_id,
+            return_url=return_url
+        )
+
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"Error creating portal session: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stripe/subscription/<subscription_id>', methods=['GET'])
+def get_subscription(subscription_id):
+    """Get subscription details"""
+    try:
+        result = stripe_service.get_subscription(subscription_id)
+
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 404
+
+    except Exception as e:
+        print(f"Error getting subscription: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stripe/subscription/<subscription_id>/cancel', methods=['POST'])
+def cancel_subscription(subscription_id):
+    """Cancel a subscription"""
+    try:
+        data = request.get_json() or {}
+        cancel_immediately = data.get('cancel_immediately', False)
+
+        result = stripe_service.cancel_subscription(
+            subscription_id=subscription_id,
+            cancel_immediately=cancel_immediately
+        )
+
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"Error cancelling subscription: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stripe/subscription/<subscription_id>/update', methods=['POST'])
+def update_subscription(subscription_id):
+    """Update subscription to a new plan"""
+    try:
+        data = request.get_json()
+        new_price_id = data.get('new_price_id')
+
+        if not new_price_id:
+            return jsonify({'error': 'new_price_id is required'}), 400
+
+        result = stripe_service.update_subscription(
+            subscription_id=subscription_id,
+            new_price_id=new_price_id
+        )
+
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"Error updating subscription: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stripe/webhook', methods=['POST'])
+def stripe_webhook():
+    """Handle Stripe webhook events"""
+    try:
+        payload = request.data
+        sig_header = request.headers.get('Stripe-Signature')
+
+        if not sig_header:
+            return jsonify({'error': 'Missing Stripe-Signature header'}), 400
+
+        # Verify webhook signature
+        event = stripe_service.verify_webhook_signature(payload, sig_header)
+
+        if not event:
+            return jsonify({'error': 'Invalid signature'}), 400
+
+        # Process the event
+        result = stripe_service.handle_webhook_event(event)
+
+        print(f"Webhook processed: {result['event_type']}")
+        print(f"Updates to apply: {result['updates']}")
+
+        # TODO: Update user profile in Supabase with result['updates']
+        # This should be done here or in a background task
+        # Example:
+        # if result['updates'].get('user_id'):
+        #     supabase_client.update_user_subscription(
+        #         user_id=result['updates']['user_id'],
+        #         updates=result['updates']
+        #     )
+
+        return jsonify({'received': True, 'processed': result['processed']}), 200
+
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(404)
 def not_found(error):

@@ -31,6 +31,9 @@ export const STRIPE_CONFIG = {
   }
 };
 
+// Backend API URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
+
 // Comprehensive Stripe payment service
 export const stripeService = {
   // Create checkout session for one-time payments
@@ -41,32 +44,34 @@ export const stripeService = {
         throw new Error('Invalid subscription tier');
       }
 
-      // For demo purposes, we'll simulate the checkout process
-      // const stripe = await getStripe(); // Uncomment when implementing real Stripe
-      // In production, you'd call your backend API to create the session
-      const sessionData = {
-        mode: tier.type === 'one_time' ? 'payment' : 'subscription',
-        price_id: STRIPE_CONFIG.priceIds[tierId],
-        customer_email: userEmail,
-        success_url: `${window.location.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${window.location.origin}/pricing`,
-        metadata: {
-          user_id: userId,
+      // Call backend API to create Stripe checkout session
+      const response = await fetch(`${API_BASE_URL}/api/stripe/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           tier_id: tierId,
-          property_data: propertyData ? JSON.stringify(propertyData) : null
-        }
-      };
+          user_id: userId,
+          user_email: userEmail,
+          price_id: STRIPE_CONFIG.priceIds[tierId],
+          mode: tier.type === 'one_time' ? 'payment' : 'subscription',
+          property_data: propertyData
+        })
+      });
 
-      console.log('Creating checkout session:', sessionData);
-      
-      // Mock successful session creation
-      return {
-        success: true,
-        sessionId: `cs_mock_${Date.now()}`,
-        url: `https://checkout.stripe.com/mock/${tierId}`,
-        tierId,
-        amount: tier.price
-      };
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create checkout session');
+      }
+
+      // Redirect to Stripe Checkout
+      if (result.url) {
+        window.location.href = result.url;
+      }
+
+      return result;
     } catch (error) {
       console.error('Error creating checkout session:', error);
       return { success: false, error: error.message };
@@ -131,17 +136,25 @@ export const stripeService = {
   },
 
   // Cancel subscription
-  cancelSubscription: async (subscriptionId, reason = 'user_requested') => {
+  cancelSubscription: async (subscriptionId, cancelImmediately = false) => {
     try {
-      console.log('Cancelling subscription:', { subscriptionId, reason });
-      
-      return {
-        success: true,
-        subscriptionId,
-        cancelledAt: new Date().toISOString(),
-        status: 'cancelled',
-        reason
-      };
+      const response = await fetch(`${API_BASE_URL}/api/stripe/subscription/${subscriptionId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cancel_immediately: cancelImmediately
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to cancel subscription');
+      }
+
+      return result;
     } catch (error) {
       console.error('Error cancelling subscription:', error);
       return { success: false, error: error.message };
@@ -174,20 +187,20 @@ export const stripeService = {
   // Get subscription details
   getSubscriptionDetails: async (subscriptionId) => {
     try {
-      console.log('Getting subscription details:', subscriptionId);
-      
-      // Mock subscription details
-      return {
-        success: true,
-        subscription: {
-          id: subscriptionId,
-          status: 'active',
-          currentPeriodStart: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-          currentPeriodEnd: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          cancelAtPeriodEnd: false,
-          tier: APP_CONFIG.subscriptionTiers.multiple_locations_ongoing
+      const response = await fetch(`${API_BASE_URL}/api/stripe/subscription/${subscriptionId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         }
-      };
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to get subscription details');
+      }
+
+      return result;
     } catch (error) {
       console.error('Error getting subscription details:', error);
       return { success: false, error: error.message };
@@ -197,13 +210,24 @@ export const stripeService = {
   // Get customer portal URL
   getCustomerPortalUrl: async (customerId, returnUrl) => {
     try {
-      console.log('Getting customer portal URL:', { customerId, returnUrl });
-      
-      // Mock portal URL
-      return {
-        success: true,
-        url: `https://billing.stripe.com/p/session/mock_${customerId}`
-      };
+      const response = await fetch(`${API_BASE_URL}/api/stripe/create-portal-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer_id: customerId,
+          return_url: returnUrl
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to get customer portal URL');
+      }
+
+      return result;
     } catch (error) {
       console.error('Error getting customer portal URL:', error);
       return { success: false, error: error.message };
