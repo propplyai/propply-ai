@@ -232,7 +232,7 @@ export const authService = {
       console.log('Creating user profile for:', user.id, user.email);
 
       // First check if profile already exists
-      const { data: existingProfile, error: fetchError } = await supabase
+      const { data: existingProfile } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', user.id)
