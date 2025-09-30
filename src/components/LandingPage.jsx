@@ -1,114 +1,82 @@
-import React, { useState, useEffect } from 'react';
-import { supabase, APP_CONFIG } from '../config/supabase';
+import React, { useState } from 'react';
 import { authService } from '../services/auth';
 import {
-  Building, Users, BarChart3, Calendar, CheckCircle, ArrowRight,
-  Shield, Zap, Eye, EyeOff, X
+  Building, Shield, Zap, Eye, EyeOff, X, CheckCircle, ArrowRight, Sparkles
 } from 'lucide-react';
 
 const LandingPage = ({ onLogin }) => {
-  const [showLogin, setShowLogin] = useState(false);
-  const [showSignup, setShowSignup] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('signin'); // 'signin' or 'signup'
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    fullName: ''
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  // const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
-  // Handle navbar scroll effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleEmailLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const result = await authService.signIn(email, password);
-      
-      if (result.success) {
-        onLogin(result.user);
-        setShowLogin(false);
-        // Clear form
-        setEmail('');
-        setPassword('');
-      } else {
-        setError(result.error);
-      }
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEmailSignup = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      console.log('Starting signup process...');
-      
-      const result = await authService.signUp(email, password, {
-        fullName: fullName
-      });
-      
-      console.log('Signup result:', result);
-      
-      if (result.success) {
-        // Check if we have a session - only login if session exists
-        if (result.session && result.user) {
-          // Session exists - user can login immediately
-          console.log('Session available, logging in user');
+      if (authMode === 'signin') {
+        // Sign In
+        const result = await authService.signIn(formData.email, formData.password);
+        
+        if (result.success) {
+          console.log('Sign in successful, redirecting to profile...');
           onLogin(result.user, true); // true = redirect to profile
-          setShowSignup(false);
-          // Clear form
-          setEmail('');
-          setPassword('');
-          setFullName('');
-        } else if (result.user && !result.session) {
-          // No session - email confirmation required
-          console.log('No session - email confirmation required');
-          setShowSignup(false);
-          // Clear form
-          setEmail('');
-          setPassword('');
-          setFullName('');
-          // Show success message with instruction
-          alert('✅ Account created successfully!\n\nPlease check your email to verify your account, then sign in.');
+          setShowAuthModal(false);
+          resetForm();
         } else {
-          setError('Account created but user data missing. Please try signing in.');
+          setError(result.error || 'Failed to sign in');
         }
       } else {
-        setError(result.error || 'Failed to create account');
+        // Sign Up
+        const result = await authService.signUp(formData.email, formData.password, {
+          fullName: formData.fullName
+        });
+        
+        console.log('Signup result:', result);
+        
+        if (result.success) {
+          // Check if we have a session - only login if session exists
+          if (result.session && result.user) {
+            // Session exists - user can login immediately
+            console.log('Session available, logging in user and redirecting to profile...');
+            onLogin(result.user, true); // true = redirect to profile
+            setShowAuthModal(false);
+            resetForm();
+          } else if (result.user && !result.session) {
+            // No session - email confirmation required
+            console.log('No session - email confirmation required');
+            setShowAuthModal(false);
+            resetForm();
+            alert('✅ Account created successfully!\n\nPlease check your email to verify your account, then sign in.');
+          } else {
+            setError('Account created but user data missing. Please try signing in.');
+          }
+        } else {
+          setError(result.error || 'Failed to create account');
+        }
       }
     } catch (error) {
-      console.error('Signup error in component:', error);
-      setError(error.message || 'Network error occurred');
+      console.error('Auth error:', error);
+      setError(error.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleAuth = async () => {
     setLoading(true);
     setError('');
 
     try {
       console.log('Starting Google OAuth...');
-      console.log('Supabase URL:', supabase.supabaseUrl);
-      
-      // Use the auth service for consistent error handling
       const result = await authService.signInWithGoogle();
       
       if (result.success) {
@@ -117,17 +85,13 @@ const LandingPage = ({ onLogin }) => {
       } else {
         throw new Error(result.error);
       }
-      
     } catch (error) {
       console.error('Google OAuth error:', error);
       
-      // Provide more specific error messages
       if (error.message?.includes('Provider not found')) {
         setError('Google authentication is not configured. Please contact support.');
       } else if (error.message?.includes('Invalid provider')) {
         setError('Google authentication is not available. Please use email/password.');
-      } else if (error.message?.includes('redirect_uri_mismatch')) {
-        setError('OAuth configuration error. Please contact support.');
       } else {
         setError(error.message || 'Failed to sign in with Google. Please try again.');
       }
@@ -136,1102 +100,299 @@ const LandingPage = ({ onLogin }) => {
     }
   };
 
-  // Remove the old createOrUpdateUserProfile function since it's now handled in authService
+  const resetForm = () => {
+    setFormData({ email: '', password: '', fullName: '' });
+    setError('');
+    setShowPassword(false);
+  };
 
-  const features = [
-    {
-      icon: Building,
-      title: 'Locale-Aware Compliance',
-      description: 'NYC & Philadelphia specific compliance punch lists with swipe-to-remove functionality'
-    },
-    {
-      icon: BarChart3,
-      title: 'Smart Analytics',
-      description: 'AI-powered insights and risk assessment for your property portfolio'
-    },
-    {
-      icon: Users,
-      title: 'Vendor Marketplace',
-      description: 'Connect with certified vendors and generate formal RFPs'
-    },
-    {
-      icon: Calendar,
-      title: 'Automated Scheduling',
-      description: 'Never miss an inspection with intelligent scheduling and reminders'
-    },
-    {
-      icon: Shield,
-      title: 'Report Library',
-      description: 'Centralized reports with 30-day updates and 12-month entitlements'
-    },
-    {
-      icon: Zap,
-      title: 'Quick To-Dos',
-      description: 'Generate property-specific action items with portfolio roll-up'
-    }
-  ];
+  const openAuthModal = (mode) => {
+    setAuthMode(mode);
+    setShowAuthModal(true);
+    resetForm();
+  };
 
-  const pricingPlans = Object.entries(APP_CONFIG.subscriptionTiers).map(([key, plan]) => ({
-    key,
-    ...plan,
-    popular: key === 'enterprise_monthly'
-  }));
+  const closeAuthModal = () => {
+    setShowAuthModal(false);
+    resetForm();
+  };
+
+  const switchMode = () => {
+    setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+    setError('');
+  };
 
   return (
-    <>
-      {/* Add the CSS styles */}
-      <style>{`
-        :root {
-          --primary-navy: #0F172A;
-          --electric-blue: #3B82F6;
-          --emerald-green: #10B981;
-          --amber-highlight: #F59E0B;
-          --slate-50: #F8FAFC;
-          --slate-100: #F1F5F9;
-          --slate-200: #E2E8F0;
-          --slate-300: #CBD5E1;
-          --slate-400: #94A3B8;
-          --slate-500: #64748B;
-          --slate-600: #475569;
-          --slate-700: #334155;
-          --slate-800: #1E293B;
-          --slate-900: #0F172A;
-          --white: #FFFFFF;
-          
-          --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-          --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-          
-          --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-          --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-          --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-          --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-          --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-          --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-          
-          --radius-sm: 0.375rem;
-          --radius: 0.5rem;
-          --radius-md: 0.75rem;
-          --radius-lg: 1rem;
-          --radius-xl: 1.5rem;
-          --radius-2xl: 2rem;
-        }
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        {/* Background Decorations */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        </div>
 
-        .navbar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 1000;
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(20px);
-          border-bottom: 1px solid rgba(226, 232, 240, 0.5);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          animation: slideDown 0.8s ease-out;
-        }
-
-        .navbar.scrolled {
-          background: rgba(255, 255, 255, 0.98);
-          box-shadow: var(--shadow-lg);
-          transform: translateY(-2px);
-        }
-
-        @keyframes slideDown {
-          from {
-            transform: translateY(-100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-
-        .nav-container {
-          max-width: 1280px;
-          margin: 0 auto;
-          padding: 0 2rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          height: 4rem;
-        }
-
-        .logo {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          font-weight: 800;
-          font-size: 1.5rem;
-          color: var(--primary-navy);
-          text-decoration: none;
-          transition: all 0.3s ease;
-          animation: fadeInLeft 1s ease-out 0.2s both;
-        }
-
-        .logo:hover {
-          transform: scale(1.05);
-        }
-
-        .logo-image {
-          height: 2.5rem;
-          width: auto;
-          transition: all 0.3s ease;
-          animation: pulse 2s infinite;
-        }
-
-        .logo-image:hover {
-          transform: rotate(5deg) scale(1.1);
-        }
-
-        @keyframes fadeInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.02);
-          }
-        }
-
-        .nav-links {
-          display: flex;
-          align-items: center;
-          gap: 2rem;
-          list-style: none;
-        }
-
-        .nav-link {
-          color: var(--slate-600);
-          text-decoration: none;
-          font-weight: 500;
-          transition: all 0.3s ease;
-          position: relative;
-          animation: fadeInRight 1s ease-out 0.4s both;
-        }
-
-        .nav-link:hover {
-          color: var(--electric-blue);
-          transform: translateY(-2px);
-        }
-
-        .nav-link::after {
-          content: '';
-          position: absolute;
-          bottom: -5px;
-          left: 0;
-          width: 0;
-          height: 2px;
-          background: linear-gradient(90deg, var(--electric-blue), var(--emerald-green));
-          transition: width 0.3s ease;
-        }
-
-        .nav-link:hover::after {
-          width: 100%;
-        }
-
-        @keyframes fadeInRight {
-          from {
-            opacity: 0;
-            transform: translateX(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        .hero {
-          min-height: 100vh;
-          background: linear-gradient(135deg, var(--slate-50) 0%, rgba(59, 130, 246, 0.03) 50%, var(--slate-50) 100%);
-          display: flex;
-          align-items: center;
-          position: relative;
-          overflow: hidden;
-          padding-top: 4rem;
-        }
-
-        .hero::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%233B82F6" stroke-width="0.5" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-          animation: backgroundMove 20s linear infinite;
-          opacity: 0.3;
-        }
-
-        @keyframes backgroundMove {
-          0% { transform: translate(0, 0); }
-          100% { transform: translate(-10px, -10px); }
-        }
-
-        .hero-container {
-          max-width: 1280px;
-          margin: 0 auto;
-          padding: 0 2rem;
-          position: relative;
-          z-index: 2;
-        }
-
-        .hero-content {
-          text-align: center;
-          max-width: 800px;
-          margin: 0 auto;
-          animation: fadeInUp 1.2s ease-out 0.6s both;
-        }
-
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(50px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .hero-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 1rem;
-          background: rgba(59, 130, 246, 0.1);
-          border: 1px solid rgba(59, 130, 246, 0.2);
-          border-radius: var(--radius-2xl);
-          color: var(--electric-blue);
-          font-size: 0.875rem;
-          font-weight: 500;
-          margin-bottom: 2rem;
-        }
-
-        .hero-title {
-          font-size: clamp(2.5rem, 6vw, 4rem);
-          font-weight: 800;
-          color: var(--primary-navy);
-          margin-bottom: 1.5rem;
-          line-height: 1.1;
-          animation: titleGlow 3s ease-in-out infinite alternate;
-        }
-
-        @keyframes titleGlow {
-          from {
-            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-          }
-          to {
-            text-shadow: 0 0 30px rgba(59, 130, 246, 0.5), 0 0 40px rgba(16, 185, 129, 0.3);
-          }
-        }
-
-        .hero-subtitle {
-          font-size: 1.25rem;
-          color: var(--slate-600);
-          margin-bottom: 2rem;
-          line-height: 1.6;
-          animation: fadeInUp 1.2s ease-out 0.8s both;
-        }
-
-        .hero-cta {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          align-items: center;
-          margin-bottom: 3rem;
-          animation: fadeInUp 1.2s ease-out 1s both;
-        }
-
-        .btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 1rem 2rem;
-          border-radius: var(--radius-lg);
-          font-weight: 600;
-          text-decoration: none;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          cursor: pointer;
-          border: none;
-          font-size: 1rem;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .btn::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-          transition: left 0.5s;
-        }
-
-        .btn:hover::before {
-          left: 100%;
-        }
-
-        .btn-primary {
-          background: linear-gradient(135deg, var(--electric-blue), #2563EB);
-          color: white;
-          box-shadow: var(--shadow-md);
-          animation: buttonPulse 2s infinite;
-        }
-
-        .btn-primary:hover {
-          transform: translateY(-3px) scale(1.05);
-          box-shadow: 0 20px 40px rgba(59, 130, 246, 0.4);
-        }
-
-        @keyframes buttonPulse {
-          0%, 100% {
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-          }
-          50% {
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
-          }
-        }
-
-        .btn-secondary {
-          background: var(--white);
-          color: var(--slate-700);
-          border: 2px solid var(--slate-200);
-        }
-
-        .btn-secondary:hover {
-          background: var(--slate-50);
-          border-color: var(--electric-blue);
-          color: var(--electric-blue);
-          transform: translateY(-2px);
-          box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-
-
-        @keyframes iconFloat {
-          0%, 100% {
-            transform: translateY(0) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-5px) rotate(5deg);
-          }
-        }
-
-        .pricing-card {
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-          animation: slideInUp 0.8s ease-out both;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .pricing-card::before {
-          content: '';
-          position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.1), transparent);
-          transform: rotate(45deg);
-          transition: all 0.6s ease;
-          opacity: 0;
-        }
-
-        .pricing-card:hover::before {
-          animation: shimmer 1.5s ease-in-out;
-        }
-
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%) translateY(-100%) rotate(45deg);
-            opacity: 0;
-          }
-          50% {
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(100%) translateY(100%) rotate(45deg);
-            opacity: 0;
-          }
-        }
-
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(50px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .popular-badge {
-          animation: badgePulse 2s infinite;
-        }
-
-        @keyframes badgePulse {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.05);
-          }
-        }
-
-        @media (min-width: 640px) {
-          .hero-cta {
-            flex-direction: row;
-            justify-content: center;
-          }
-        }
-      `}</style>
-
-      <div style={{ fontFamily: 'var(--font-inter)', lineHeight: '1.6', color: 'var(--slate-700)', background: 'var(--white)', overflowX: 'hidden' }}>
-        {/* Navigation */}
-        <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-          <div className="nav-container">
-            <a href="/" className="logo">
-              <img 
-                src="/propply-logo-dark.png" 
-                alt="Propply AI" 
-                className="logo-image"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'block';
-                }}
-              />
-              <span style={{ display: 'none', fontWeight: '800', fontSize: '1.5rem' }}>Propply AI</span>
-            </a>
+        {/* Navbar */}
+        <nav className="relative z-10 container mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                <Building className="h-7 w-7 text-white" />
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+                Propply AI
+              </span>
+            </div>
             
-            <ul className="nav-links">
-              <li><a href="#features" className="nav-link">Features</a></li>
-              <li><a href="#pricing" className="nav-link">Pricing</a></li>
-              <li><a href="#about" className="nav-link">About</a></li>
-              <li><a href="#contact" className="nav-link">Contact</a></li>
-              <li>
-                <button
-                  onClick={() => setShowLogin(true)}
-                  className="nav-link"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                >
-                  Sign In
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setShowSignup(true)}
-                  className="nav-link"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                >
-                  Sign Up
-                </button>
-              </li>
-            </ul>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => openAuthModal('signin')}
+                className="px-6 py-2.5 text-gray-700 hover:text-gray-900 font-medium transition-colors"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => openAuthModal('signup')}
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg transform hover:scale-105 font-medium"
+              >
+                Get Started
+              </button>
+            </div>
           </div>
         </nav>
 
-        {/* Hero Section */}
-        <section className="hero">
-          <div className="hero-container">
-            <div className="hero-content">
-              <h1 className="hero-title">
-                Property Compliance<br/>
-                <span style={{ background: 'linear-gradient(135deg, var(--electric-blue), var(--emerald-green))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                  Made Simple
-                </span>
-              </h1>
+        {/* Hero Content */}
+        <div className="relative z-10 container mx-auto px-6 pt-20 pb-32">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-8 border border-white/20 shadow-lg">
+              <Sparkles className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-semibold text-gray-700">AI-Powered Property Compliance</span>
+            </div>
+            
+            <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent leading-tight">
+              Property Compliance<br />Made Simple
+            </h1>
+            
+            <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+              Automate inspections, track violations, and stay compliant with AI-powered insights for NYC & Philadelphia properties.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                onClick={() => openAuthModal('signup')}
+                className="group px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-2xl transform hover:scale-105 font-medium text-lg flex items-center space-x-3"
+              >
+                <span>Start Free Trial</span>
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </button>
               
-              <p className="hero-subtitle">
-                Streamline NYC and Philadelphia property compliance with AI-powered analytics, 
-                automated scheduling, and a verified vendor marketplace. Stay compliant, save time, reduce costs.
-              </p>
-              
-              <div className="hero-cta">
-                <button
-                  onClick={() => setShowSignup(true)}
-                  className="btn btn-primary"
-                >
-                  Start Free Trial
-                  <ArrowRight size={20} />
-                </button>
-                <button className="btn btn-secondary">
-                  Watch Demo
-                </button>
-              </div>
+              <button
+                onClick={() => openAuthModal('signin')}
+                className="px-8 py-4 bg-white/80 backdrop-blur-sm text-gray-700 rounded-2xl hover:bg-white transition-all duration-300 shadow-lg border border-white/20 font-medium text-lg"
+              >
+                Sign In
+              </button>
             </div>
           </div>
-        </section>
-
-        {/* Features Section */}
-        <section id="features" style={{ padding: '8rem 0', background: 'var(--white)' }}>
-          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 2rem' }}>
-            <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-              <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: '800', color: 'var(--primary-navy)', marginBottom: '1rem', lineHeight: '1.2' }}>
-                Everything You Need for Property Compliance
-              </h2>
-              <p style={{ fontSize: '1.125rem', color: 'var(--slate-600)', maxWidth: '36rem', margin: '0 auto' }}>
-                Built specifically for NYC and Philadelphia property managers, with intelligent features that save time and reduce compliance risks.
-              </p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <div 
-                    key={index} 
-                    style={{ 
-                      background: 'var(--white)', 
-                      border: '1px solid var(--slate-200)', 
-                      borderRadius: 'var(--radius-xl)', 
-                      padding: '2rem',
-                      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      animation: `fadeInUp 0.8s ease-out ${0.2 * index}s both`,
-                      transform: 'translateY(20px)',
-                      opacity: 0
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.transform = 'translateY(-10px) scale(1.02)';
-                      e.target.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
-                      e.target.style.borderColor = 'var(--electric-blue)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.transform = 'translateY(0) scale(1)';
-                      e.target.style.boxShadow = 'none';
-                      e.target.style.borderColor = 'var(--slate-200)';
-                    }}
-                  >
-                    <div style={{ 
-                      width: '3rem', 
-                      height: '3rem', 
-                      borderRadius: 'var(--radius-lg)', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center', 
-                      marginBottom: '1.5rem', 
-                      color: 'white', 
-                      fontSize: '1.25rem',
-                      background: index % 3 === 0 ? 'linear-gradient(135deg, var(--electric-blue), #2563EB)' : 
-                                 index % 3 === 1 ? 'linear-gradient(135deg, var(--emerald-green), #059669)' :
-                                 'linear-gradient(135deg, var(--amber-highlight), #D97706)',
-                      transition: 'all 0.3s ease',
-                      animation: 'iconFloat 3s ease-in-out infinite'
-                    }}>
-                      <Icon size={20} />
-                    </div>
-                    <h3 style={{ 
-                      fontSize: '1.25rem', 
-                      fontWeight: '700', 
-                      color: 'var(--primary-navy)', 
-                      marginBottom: '0.75rem',
-                      transition: 'color 0.3s ease'
-                    }}>
-                      {feature.title}
-                    </h3>
-                    <p style={{ 
-                      color: 'var(--slate-600)', 
-                      lineHeight: '1.6',
-                      transition: 'color 0.3s ease'
-                    }}>
-                      {feature.description}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Pricing Section */}
-        <section id="pricing" style={{ 
-          padding: '8rem 0', 
-          background: 'linear-gradient(135deg, var(--slate-50) 0%, rgba(59, 130, 246, 0.03) 50%, var(--slate-50) 100%)' 
-        }}>
-          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 2rem' }}>
-            <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-              <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: '800', color: 'var(--primary-navy)', marginBottom: '1rem', lineHeight: '1.2' }}>
-                Choose the perfect plan<br/>
-                <span style={{ background: 'linear-gradient(135deg, var(--amber-highlight), var(--electric-blue))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                  for your needs
-                </span>
-              </h2>
-              <p style={{ fontSize: '1.125rem', color: 'var(--slate-600)', maxWidth: '36rem', margin: '0 auto' }}>
-                Start free and scale as you grow. All plans include our core compliance features with transparent pricing and no hidden fees.
-              </p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-              {pricingPlans.map((plan, index) => (
-                <div 
-                  key={plan.key} 
-                  className="pricing-card"
-                  style={{
-                    background: 'var(--white)',
-                    border: plan.popular ? '2px solid var(--electric-blue)' : '2px solid var(--slate-200)',
-                    borderRadius: 'var(--radius-2xl)',
-                    padding: '2.5rem 2rem',
-                    position: 'relative',
-                    transform: plan.popular ? 'scale(1.05)' : 'scale(1)',
-                    boxShadow: plan.popular ? 'var(--shadow-2xl)' : 'var(--shadow-lg)',
-                    animationDelay: `${index * 0.2}s`
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = plan.popular ? 'scale(1.08) translateY(-10px)' : 'scale(1.03) translateY(-10px)';
-                    e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = plan.popular ? 'scale(1.05) translateY(0)' : 'scale(1) translateY(0)';
-                    e.currentTarget.style.boxShadow = plan.popular ? 'var(--shadow-2xl)' : 'var(--shadow-lg)';
-                  }}
-                >
-                  {plan.popular && (
-                    <div 
-                      className="popular-badge"
-                      style={{
-                        position: 'absolute',
-                        top: '0',
-                        left: '0',
-                        right: '0',
-                        background: 'linear-gradient(135deg, var(--electric-blue), var(--emerald-green))',
-                        color: 'white',
-                        textAlign: 'center',
-                        padding: '0.5rem',
-                        fontSize: '0.875rem',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Most Popular
-                    </div>
-                  )}
-                  
-                  <div style={{ textAlign: 'center', marginBottom: '2rem', marginTop: plan.popular ? '2rem' : '0' }}>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: '700', color: 'var(--primary-navy)', marginBottom: '0.5rem' }}>
-                      {plan.name}
-                    </h3>
-                    <div style={{ fontSize: '3rem', fontWeight: '800', color: 'var(--primary-navy)', marginBottom: '0.25rem' }}>
-                      <span style={{ fontSize: '1.5rem', verticalAlign: 'top' }}>$</span>{plan.price}
-                    </div>
-                    <div style={{ color: 'var(--slate-500)', fontSize: '0.875rem' }}>
-                      {plan.type === 'subscription' && plan.interval === 'year' ? 'per year' : 
-                       plan.type === 'subscription' && plan.interval === 'month' ? 'per month' :
-                       plan.type === 'one_time' ? 'one-time' : 'forever free'}
-                    </div>
-                  </div>
-
-                  <ul style={{ listStyle: 'none', marginBottom: '2rem' }}>
-                    {plan.features.map((feature, index) => (
-                      <li key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', color: 'var(--slate-700)' }}>
-                        <CheckCircle size={20} style={{ color: 'var(--emerald-green)', flexShrink: 0 }} />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <button
-                    onClick={() => setShowSignup(true)}
-                    className={plan.popular ? 'btn btn-primary' : 'btn btn-secondary'}
-                    style={{ width: '100%' }}
-                  >
-                    {plan.price === 0 ? 'Get Started Free' : 
-                     plan.type === 'one_time' ? 'Order Report' : 'Start Free Trial'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
 
-      {/* Login Modal */}
-      {showLogin && (
-        <div style={{
-          position: 'fixed',
-          inset: '0',
-          background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(4px)',
-          zIndex: '9999',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '1.5rem',
-            boxShadow: 'var(--shadow-2xl)',
-            maxWidth: '28rem',
-            width: '100%',
-            padding: '2rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary-navy)' }}>Welcome Back</h2>
-              <button
-                onClick={() => setShowLogin(false)}
-                style={{ padding: '0.5rem', background: 'none', border: 'none', borderRadius: '50%', cursor: 'pointer' }}
-              >
-                <X size={24} />
-              </button>
+      {/* Features Section */}
+      <div className="relative z-10 container mx-auto px-6 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6">
+              <Shield className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Smart Compliance</h3>
+            <p className="text-gray-600 leading-relaxed">
+              AI-powered compliance tracking for NYC & Philadelphia properties with automated violation detection.
+            </p>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
+              <Zap className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Instant Reports</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Generate comprehensive compliance reports in seconds with actionable insights and recommendations.
+            </p>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+            <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6">
+              <CheckCircle className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Stay Compliant</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Never miss a deadline with automated scheduling, reminders, and vendor marketplace integration.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {authMode === 'signin' ? 'Welcome Back' : 'Create Account'}
+                </h2>
+                <button
+                  onClick={closeAuthModal}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+              <p className="text-gray-600 mt-2">
+                {authMode === 'signin' 
+                  ? 'Sign in to access your dashboard' 
+                  : 'Get started with your free account'}
+              </p>
             </div>
 
-            {error && (
-              <div style={{
-                marginBottom: '1rem',
-                padding: '1rem',
-                background: '#FEF2F2',
-                border: '1px solid #FECACA',
-                borderRadius: '0.75rem',
-                color: '#DC2626'
-              }}>
-                {error}
-              </div>
-            )}
+            {/* Modal Body */}
+            <div className="p-6">
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
 
-            {/* Google Sign In Button */}
-            <button
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                border: '1px solid var(--slate-300)',
-                borderRadius: '0.75rem',
-                background: 'white',
-                color: 'var(--slate-700)',
-                fontSize: '1rem',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.75rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                marginBottom: '1.5rem'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'var(--slate-50)';
-                e.target.style.borderColor = 'var(--electric-blue)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'white';
-                e.target.style.borderColor = 'var(--slate-300)';
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              {loading ? 'Signing in...' : 'Continue with Google'}
-            </button>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {authMode === 'signup' && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="John Doe"
+                      required
+                    />
+                  </div>
+                )}
 
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: '1.5rem',
-              gap: '1rem'
-            }}>
-              <div style={{ flex: 1, height: '1px', background: 'var(--slate-200)' }}></div>
-              <span style={{ color: 'var(--slate-500)', fontSize: '0.875rem' }}>or</span>
-              <div style={{ flex: 1, height: '1px', background: 'var(--slate-200)' }}></div>
-            </div>
-
-            <form onSubmit={handleEmailLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: 'var(--slate-700)', marginBottom: '0.5rem' }}>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 1rem',
-                    border: '1px solid var(--slate-300)',
-                    borderRadius: '0.75rem',
-                    fontSize: '1rem'
-                  }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: 'var(--slate-700)', marginBottom: '0.5rem' }}>
-                  Password
-                </label>
-                <div style={{ position: 'relative' }}>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email
+                  </label>
                   <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      paddingRight: '3rem',
-                      border: '1px solid var(--slate-300)',
-                      borderRadius: '0.75rem',
-                      fontSize: '1rem'
-                    }}
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="you@example.com"
                     required
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '0.75rem',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--slate-400)'
-                    }}
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12"
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>{authMode === 'signin' ? 'Signing In...' : 'Creating Account...'}</span>
+                    </span>
+                  ) : (
+                    <span>{authMode === 'signin' ? 'Sign In' : 'Create Account'}</span>
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white text-gray-500">Or continue with</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleGoogleAuth}
+                  disabled={loading}
+                  className="mt-4 w-full py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-300 font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                  <span>Google</span>
+                </button>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn btn-primary"
-                style={{ width: '100%' }}
-              >
-                {loading ? 'Signing In...' : 'Sign In'}
-              </button>
-            </form>
-
-            <p style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--slate-600)' }}>
-              Don't have an account?{' '}
-              <button
-                onClick={() => {
-                  setShowLogin(false);
-                  setShowSignup(true);
-                }}
-                style={{ color: 'var(--electric-blue)', fontWeight: '500', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                Sign up
-              </button>
-            </p>
+              <div className="mt-6 text-center">
+                <button
+                  onClick={switchMode}
+                  className="text-sm text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  {authMode === 'signin' 
+                    ? "Don't have an account? Sign up" 
+                    : "Already have an account? Sign in"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Signup Modal */}
-      {showSignup && (
-        <div style={{
-          position: 'fixed',
-          inset: '0',
-          background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(4px)',
-          zIndex: '9999',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '1.5rem',
-            boxShadow: 'var(--shadow-2xl)',
-            maxWidth: '28rem',
-            width: '100%',
-            padding: '2rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary-navy)' }}>Create Account</h2>
-              <button
-                onClick={() => setShowSignup(false)}
-                style={{ padding: '0.5rem', background: 'none', border: 'none', borderRadius: '50%', cursor: 'pointer' }}
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            {error && (
-              <div style={{
-                marginBottom: '1rem',
-                padding: '1rem',
-                background: '#FEF2F2',
-                border: '1px solid #FECACA',
-                borderRadius: '0.75rem',
-                color: '#DC2626'
-              }}>
-                {error}
-              </div>
-            )}
-
-            {/* Google Sign Up Button */}
-            <button
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                border: '1px solid var(--slate-300)',
-                borderRadius: '0.75rem',
-                background: 'white',
-                color: 'var(--slate-700)',
-                fontSize: '1rem',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.75rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                marginBottom: '1.5rem'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'var(--slate-50)';
-                e.target.style.borderColor = 'var(--electric-blue)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'white';
-                e.target.style.borderColor = 'var(--slate-300)';
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              {loading ? 'Creating account...' : 'Continue with Google'}
-            </button>
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: '1.5rem',
-              gap: '1rem'
-            }}>
-              <div style={{ flex: 1, height: '1px', background: 'var(--slate-200)' }}></div>
-              <span style={{ color: 'var(--slate-500)', fontSize: '0.875rem' }}>or</span>
-              <div style={{ flex: 1, height: '1px', background: 'var(--slate-200)' }}></div>
-            </div>
-
-            <form onSubmit={handleEmailSignup} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: 'var(--slate-700)', marginBottom: '0.5rem' }}>
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 1rem',
-                    border: '1px solid var(--slate-300)',
-                    borderRadius: '0.75rem',
-                    fontSize: '1rem'
-                  }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: 'var(--slate-700)', marginBottom: '0.5rem' }}>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 1rem',
-                    border: '1px solid var(--slate-300)',
-                    borderRadius: '0.75rem',
-                    fontSize: '1rem'
-                  }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: 'var(--slate-700)', marginBottom: '0.5rem' }}>
-                  Password
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      paddingRight: '3rem',
-                      border: '1px solid var(--slate-300)',
-                      borderRadius: '0.75rem',
-                      fontSize: '1rem'
-                    }}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '0.75rem',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--slate-400)'
-                    }}
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn btn-primary"
-                style={{ width: '100%' }}
-              >
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </button>
-            </form>
-
-            <p style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--slate-600)' }}>
-              Already have an account?{' '}
-              <button
-                onClick={() => {
-                  setShowSignup(false);
-                  setShowLogin(true);
-                }}
-                style={{ color: 'var(--electric-blue)', fontWeight: '500', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                Sign in
-              </button>
-            </p>
-          </div>
-        </div>
-      )}
-    </>
+      <style jsx>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      `}</style>
+    </div>
   );
 };
 

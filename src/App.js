@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './config/supabase';
 import { authService } from './services/auth';
-import LandingPageNew from './components/LandingPageNew';
+import LandingPage from './components/LandingPage';
 import MVPDashboard from './components/MVPDashboard';
 // Debug components removed for production
 import './App.css';
@@ -268,7 +268,7 @@ function App() {
       {user ? (
         <MVPDashboard user={user} onLogout={handleLogout} initialTab={initialTab} />
       ) : (
-        <LandingPageNew onLogin={handleLogin} />
+        <LandingPage onLogin={handleLogin} />
       )}
     </div>
   );
