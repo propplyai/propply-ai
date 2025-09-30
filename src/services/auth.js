@@ -89,18 +89,9 @@ export const authService = {
     try {
       console.log('Attempting to sign in with Google');
       
-      // Clear any stale OAuth state from localStorage
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.includes('auth-token') || key.includes('propply-auth'))) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => {
-        console.log('Clearing stale auth key:', key);
-        localStorage.removeItem(key);
-      });
+      // DON'T clear localStorage - PKCE code verifier needs to persist!
+      // The code verifier is stored with a key like "sb-{project}-auth-token-code-verifier"
+      // and is REQUIRED to complete the OAuth flow
       
       // Use current origin for redirect - App.js will handle profile redirect on OAuth callback
       const redirectUrl = window.location.origin;

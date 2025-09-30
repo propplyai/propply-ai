@@ -103,19 +103,42 @@ function App() {
         const authCode = urlParams.get('code');
 
         if (authCode) {
-          console.log('OAuth callback detected, waiting for session exchange...');
-          // Clean the URL immediately
+          console.log('OAuth callback detected with code:', authCode.substring(0, 20) + '...');
+          console.log('Current URL:', window.location.href);
+          
+          // DON'T clean URL yet - let Supabase process it first
+          
+          // Try to exchange code for session multiple times
+          let session = null;
+          let attempts = 0;
+          const maxAttempts = 5;
+          
+          while (!session && attempts < maxAttempts && mounted) {
+            attempts++;
+            console.log(`Attempt ${attempts}/${maxAttempts}: Exchanging code for session...`);
+            
+            const { data, error } = await supabase.auth.getSession();
+            
+            if (error) {
+              console.error('Session exchange error:', error);
+            }
+            
+            if (data?.session) {
+              session = data.session;
+              console.log('✅ Session established for:', session.user.email);
+              break;
+            }
+            
+            // Wait before next attempt (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 500 * attempts));
+          }
+
+          // Clean the URL after session is established (or failed)
           window.history.replaceState({}, document.title, window.location.pathname);
-
-          // Wait for session to be established
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          const { data: { session } } = await supabase.auth.getSession();
 
           if (!mounted) return;
 
           if (session?.user) {
-            console.log('OAuth session established for:', session.user.email);
             setInitialTab('profile');
 
             // Wait for profile to be created by trigger
@@ -128,6 +151,13 @@ function App() {
             } else {
               setUser(session.user);
             }
+          } else {
+            console.error('❌ Failed to establish session after', attempts, 'attempts');
+            console.error('This may be due to:');
+            console.error('- Third-party cookies being blocked');
+            console.error('- PKCE code verifier not persisting');
+            console.error('- Supabase Site URL mismatch');
+            setAuthError('Failed to complete Google sign-in. Please try again or use email/password.');
           }
 
           if (mounted) {
