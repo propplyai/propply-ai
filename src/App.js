@@ -74,46 +74,95 @@ function App() {
       clearTimeout(loadingTimeout);
     };
 
+    // Helper to wait for profile to be created
+    const waitForProfile = async (userId, maxRetries = 5) => {
+      for (let i = 0; i < maxRetries; i++) {
+        const profileResult = await authService.getUserProfile(userId);
+        if (profileResult.success) {
+          return profileResult.data;
+        }
+        // Wait 500ms before next attempt
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      // After all retries, create profile manually
+      console.log('Profile not found after retries, creating manually...');
+      const createResult = await authService.createUserProfile({ id: userId });
+      if (createResult.success) {
+        return createResult.data[0];
+      }
+      return null;
+    };
+
     // Get initial session and user profile
     const initializeAuth = async () => {
       try {
         console.log('Initializing auth...');
-        
+
         // Check if this is an OAuth callback
         const urlParams = new URLSearchParams(window.location.search);
         const authCode = urlParams.get('code');
-        
+
         if (authCode) {
-          console.log('OAuth callback detected, waiting for auth state change...');
-          // Don't proceed - let onAuthStateChange handle it
-          // Just clean the URL
+          console.log('OAuth callback detected, waiting for session exchange...');
+          // Clean the URL immediately
           window.history.replaceState({}, document.title, window.location.pathname);
-          return; // Exit and let onAuthStateChange handle the session
+
+          // Wait for session to be established
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (!mounted) return;
+
+          if (session?.user) {
+            console.log('OAuth session established for:', session.user.email);
+            setInitialTab('profile');
+
+            // Wait for profile to be created by trigger
+            const profile = await waitForProfile(session.user.id);
+
+            if (!mounted) return;
+
+            if (profile) {
+              setUser({ ...session.user, profile });
+            } else {
+              setUser(session.user);
+            }
+          }
+
+          if (mounted) {
+            clearLoadingTimeout();
+            setLoading(false);
+          }
+          return;
         }
-        
+
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (!mounted) return;
-        
+
         if (session?.user) {
           console.log('User found:', session.user.email);
-          
+
           // Get user profile (database trigger should have created it)
           const profileResult = await authService.getUserProfile(session.user.id);
           console.log('Profile fetch result:', profileResult);
-          
+
           if (!mounted) return;
-          
+
           if (profileResult.success) {
             setUser({
               ...session.user,
               profile: profileResult.data
             });
           } else {
-            // Profile doesn't exist, create it quickly and continue
-            console.warn('Profile not found, creating and continuing...');
-            authService.createUserProfile(session.user); // Don't wait
-            setUser(session.user); // Set user immediately without profile
+            // Try waiting for profile
+            const profile = await waitForProfile(session.user.id);
+            if (profile) {
+              setUser({ ...session.user, profile });
+            } else {
+              setUser(session.user);
+            }
           }
         } else {
           console.log('No session found');
@@ -126,11 +175,7 @@ function App() {
           setUser(null);
         }
       } finally {
-        // Don't set loading false here if we have an OAuth code - let onAuthStateChange do it
-        const urlParams = new URLSearchParams(window.location.search);
-        const authCode = urlParams.get('code');
-        
-        if (mounted && !authCode) {
+        if (mounted) {
           console.log('Auth initialization complete');
           clearLoadingTimeout();
           setLoading(false);
@@ -145,40 +190,34 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
-      
+
       console.log('Auth state change:', event, session?.user?.email);
-      
+
       if (session?.user) {
         // Redirect to profile on SIGNED_IN event (new login/signup)
         if (event === 'SIGNED_IN') {
           console.log('User signed in via auth state change, redirecting to profile');
           setInitialTab('profile');
-        }
-        
-        try {
-          // Get user profile when user signs in
-          const profileResult = await authService.getUserProfile(session.user.id);
-          console.log('Auth state change - Profile fetch:', profileResult);
-          
+
+          // Wait for profile to be created by trigger
+          const profile = await waitForProfile(session.user.id);
+
           if (!mounted) return;
-          
-          if (profileResult.success) {
-            console.log('Auth state change - Setting user with profile');
-            setUser({
-              ...session.user,
-              profile: profileResult.data
-            });
+
+          if (profile) {
+            setUser({ ...session.user, profile });
           } else {
-            // Profile doesn't exist, create it in background and continue
-            console.log('Auth state change - Profile not found, creating in background...');
-            authService.createUserProfile(session.user); // Don't wait
-            setUser(session.user); // Set user immediately
+            setUser(session.user);
           }
-        } catch (error) {
-          console.error('Auth state change error:', error);
-          if (mounted) {
-            // Set user even if there's an error to avoid infinite loading
-            console.warn('Auth state change - Error occurred, setting user anyway');
+        } else {
+          // For other events, just try to get profile once
+          const profileResult = await authService.getUserProfile(session.user.id);
+
+          if (!mounted) return;
+
+          if (profileResult.success) {
+            setUser({ ...session.user, profile: profileResult.data });
+          } else {
             setUser(session.user);
           }
         }
@@ -187,7 +226,7 @@ function App() {
           setUser(null);
         }
       }
-      
+
       if (mounted) {
         console.log('Auth state change - Clearing loading state');
         clearLoadingTimeout();

@@ -229,17 +229,25 @@ export const authService = {
   // Create user profile
   createUserProfile: async (user) => {
     try {
+      console.log('Creating user profile for:', user.id, user.email);
+
       // First check if profile already exists
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('user_profiles')
-        .select('id')
+        .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle to avoid errors when no row exists
 
       if (existingProfile) {
-        console.log('User profile already exists');
-        return { success: true, data: existingProfile };
+        console.log('User profile already exists:', existingProfile.id);
+        return { success: true, data: [existingProfile] };
       }
+
+      // Extract name from various OAuth providers
+      const fullName = user.user_metadata?.full_name
+        || user.user_metadata?.name
+        || user.user_metadata?.display_name
+        || '';
 
       // Create new profile
       const { data, error } = await supabase
@@ -248,7 +256,7 @@ export const authService = {
           {
             id: user.id,
             email: user.email,
-            full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+            full_name: fullName,
             company: user.user_metadata?.company || '',
             phone: user.user_metadata?.phone || '',
             subscription_tier: 'free',
@@ -261,8 +269,21 @@ export const authService = {
         ])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to duplicate key (profile was created by trigger)
+        if (error.code === '23505') {
+          console.log('Profile already exists (created by trigger), fetching...');
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          return { success: true, data: [profile] };
+        }
+        throw error;
+      }
 
+      console.log('User profile created successfully:', data);
       return { success: true, data };
     } catch (error) {
       console.error('Create user profile error:', error);
