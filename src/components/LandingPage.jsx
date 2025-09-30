@@ -66,16 +66,28 @@ const LandingPage = ({ onLogin }) => {
       console.log('Signup result:', result);
       
       if (result.success) {
-        if (result.user) {
-          onLogin(result.user);
+        // Check if we have a session - only login if session exists
+        if (result.session && result.user) {
+          // Session exists - user can login immediately
+          console.log('Session available, logging in user');
+          onLogin(result.user, true); // true = redirect to profile
           setShowSignup(false);
           // Clear form
           setEmail('');
           setPassword('');
           setFullName('');
+        } else if (result.user && !result.session) {
+          // No session - email confirmation required
+          console.log('No session - email confirmation required');
+          setShowSignup(false);
+          // Clear form
+          setEmail('');
+          setPassword('');
+          setFullName('');
+          // Show success message with instruction
+          alert('✅ Account created successfully!\n\nPlease check your email to verify your account, then sign in.');
         } else {
-          // Email confirmation required
-          setError('Please check your email to verify your account before signing in.');
+          setError('Account created but user data missing. Please try signing in.');
         }
       } else {
         setError(result.error || 'Failed to create account');

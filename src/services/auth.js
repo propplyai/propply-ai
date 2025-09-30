@@ -26,18 +26,21 @@ export const authService = {
 
       if (error) throw error;
 
-      // Create user profile in database
-      if (data.user) {
-        console.log('Creating user profile for:', data.user.id);
-        const profileResult = await authService.createUserProfile(data.user);
-        console.log('Profile creation result:', profileResult);
-      }
+      // Note: Profile creation is handled by database trigger (handle_new_user)
+      // Don't create profile here as there might not be a session yet
+      
+      const hasSession = data.session !== null;
+      const message = hasSession 
+        ? 'Account created successfully!' 
+        : 'Account created successfully! Please check your email to verify your account.';
+
+      console.log(`Signup complete. Has session: ${hasSession}`);
 
       return {
         success: true,
         user: data.user,
         session: data.session,
-        message: 'Account created successfully! Please check your email to verify your account.'
+        message: message
       };
     } catch (error) {
       console.error('Sign up error:', error);

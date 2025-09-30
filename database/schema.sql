@@ -287,6 +287,47 @@ CREATE TRIGGER update_vendors_updated_at BEFORE UPDATE ON vendors
 CREATE TRIGGER update_vendor_quotes_updated_at BEFORE UPDATE ON vendor_quotes
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Function to automatically create user profile on signup
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.user_profiles (
+        id,
+        email,
+        full_name,
+        company,
+        phone,
+        subscription_tier,
+        subscription_status,
+        reports_used,
+        reports_limit,
+        created_at,
+        updated_at
+    )
+    VALUES (
+        NEW.id,
+        NEW.email,
+        COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
+        COALESCE(NEW.raw_user_meta_data->>'company', ''),
+        COALESCE(NEW.raw_user_meta_data->>'phone', ''),
+        'free',
+        'active',
+        0,
+        0,
+        NOW(),
+        NOW()
+    )
+    ON CONFLICT (id) DO NOTHING;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger for automatic profile creation
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION handle_new_user();
+
 -- Function to update property count when properties are added/removed
 CREATE OR REPLACE FUNCTION update_property_count()
 RETURNS TRIGGER AS $$

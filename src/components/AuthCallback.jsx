@@ -24,21 +24,42 @@ const AuthCallback = () => {
         }
 
         if (data.session) {
-          console.log('Authentication successful:', data.session.user);
-          setStatus('Authentication successful! Redirecting...');
-          
-          // Create user profile if it doesn't exist (for OAuth users)
           const user = data.session.user;
-          if (user) {
-            console.log('Creating/updating user profile...');
-            const profileResult = await authService.createUserProfile(user);
-            console.log('Profile result:', profileResult);
+          console.log('Authentication successful for user:', user.email);
+          setStatus('Authentication successful! Loading your profile...');
+          
+          // Wait a moment for database trigger to create the profile
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Try to fetch the user profile - this verifies the unique profile exists
+          let retries = 3;
+          let profileResult = null;
+          
+          while (retries > 0 && !profileResult?.success) {
+            console.log(`Fetching user profile (attempt ${4 - retries}/3)...`);
+            profileResult = await authService.getUserProfile(user.id);
+            
+            if (!profileResult.success) {
+              console.log('Profile not found, waiting...');
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              retries--;
+            }
           }
           
-          // Redirect to dashboard with profile tab after a short delay
+          // If profile still doesn't exist after retries, create it manually
+          if (!profileResult?.success) {
+            console.log('Profile not found after retries, creating manually...');
+            const createResult = await authService.createUserProfile(user);
+            console.log('Manual profile creation result:', createResult);
+          }
+          
+          console.log('User profile ready, redirecting to dashboard...');
+          setStatus('Profile loaded! Redirecting...');
+          
+          // Redirect to dashboard with profile tab
           setTimeout(() => {
             navigate('/?tab=profile', { replace: true });
-          }, 2000);
+          }, 1000);
         } else {
           console.log('No session found');
           setStatus('No authentication session found');
