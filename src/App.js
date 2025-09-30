@@ -228,6 +228,13 @@ function App() {
           } else {
             setUser(session.user);
           }
+          
+          // Clear loading state after user is set
+          if (mounted) {
+            console.log('SIGNED_IN: User and profile loaded, clearing loading state');
+            clearLoadingTimeout();
+            setLoading(false);
+          }
         } else {
           // For other events, just try to get profile once
           const profileResult = await authService.getUserProfile(session.user.id);
@@ -239,17 +246,21 @@ function App() {
           } else {
             setUser(session.user);
           }
+          
+          // Clear loading state after user is set
+          if (mounted) {
+            console.log('Auth state change - User loaded, clearing loading state');
+            clearLoadingTimeout();
+            setLoading(false);
+          }
         }
       } else {
         if (mounted) {
           setUser(null);
+          console.log('Auth state change - No session, clearing loading state');
+          clearLoadingTimeout();
+          setLoading(false);
         }
-      }
-
-      if (mounted) {
-        console.log('Auth state change - Clearing loading state');
-        clearLoadingTimeout();
-        setLoading(false);
       }
     });
     
