@@ -130,7 +130,9 @@ function App() {
             }
             
             // Wait before next attempt (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, 500 * attempts));
+            // Capture attempts value to avoid closure issue in loop
+            const waitTime = 500 * attempts;
+            await new Promise(resolve => setTimeout(resolve, waitTime));
           }
 
           // Clean the URL after session is established (or failed)
