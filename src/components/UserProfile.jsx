@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { supabase, APP_CONFIG } from '../config/supabase';
+import React, { useState, useEffect, useCallback } from 'react';
+import { APP_CONFIG } from '../config/supabase';
 import { authService } from '../services/auth';
 import {
   User, Mail, Phone, Building, Calendar, Award, CreditCard,
@@ -22,11 +22,7 @@ const UserProfile = ({ user, onProfileUpdate }) => {
     address: ''
   });
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, [user.id]);
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       setLoading(true);
       const result = await authService.getUserProfile(user.id);
@@ -48,7 +44,11 @@ const UserProfile = ({ user, onProfileUpdate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id, user.email]);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
 
   const handleSave = async (e) => {
     e.preventDefault();
