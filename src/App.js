@@ -180,18 +180,45 @@ function App() {
   const handleLogin = async (userData, redirectToProfile = true) => {
     // Set initial tab first before setting user
     if (redirectToProfile) {
+      console.log('handleLogin: Redirecting to profile tab');
       setInitialTab('profile');
     }
     
-    // Get user profile after login
+    // Get user profile after login with retry logic
     if (userData?.id) {
-      const profileResult = await authService.getUserProfile(userData.id);
+      console.log('handleLogin: Fetching profile for user:', userData.id);
+      
+      // Wait a moment for database trigger to create profile if this is a new user
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      let retries = 3;
+      let profileResult = null;
+      
+      while (retries > 0 && !profileResult?.success) {
+        profileResult = await authService.getUserProfile(userData.id);
+        
+        if (!profileResult.success) {
+          console.log(`handleLogin: Profile fetch failed, retrying... (${3 - retries + 1}/3)`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          retries--;
+        }
+      }
+      
+      // If profile still doesn't exist, create it manually
+      if (!profileResult?.success) {
+        console.log('handleLogin: Profile not found after retries, creating...');
+        await authService.createUserProfile(userData);
+        profileResult = await authService.getUserProfile(userData.id);
+      }
+      
       if (profileResult.success) {
+        console.log('handleLogin: Profile loaded successfully:', profileResult.data);
         setUser({
           ...userData,
           profile: profileResult.data
         });
       } else {
+        console.warn('handleLogin: Could not load profile, setting user without profile');
         setUser(userData);
       }
     } else {
