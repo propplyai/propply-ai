@@ -13,15 +13,21 @@ function App() {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutCleared = false;
     
-    // Timeout to prevent infinite loading
+    // Timeout to prevent infinite loading (increased for OAuth)
     const loadingTimeout = setTimeout(() => {
-      if (mounted) {
+      if (mounted && !timeoutCleared) {
         console.warn('Auth initialization timeout - forcing app to load');
         setLoading(false);
         setAuthError('Authentication timeout - please refresh the page');
       }
-    }, 15000); // 15 second timeout for OAuth
+    }, 20000); // 20 second timeout for OAuth
+    
+    const clearLoadingTimeout = () => {
+      timeoutCleared = true;
+      clearTimeout(loadingTimeout);
+    };
 
     // Get initial session and user profile
     const initializeAuth = async () => {
@@ -33,16 +39,14 @@ function App() {
         const authCode = urlParams.get('code');
         
         if (authCode) {
-          console.log('OAuth callback detected, waiting for session...');
-          // Give Supabase time to exchange the code for a session
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log('OAuth callback detected, processing session...');
         }
         
         const { data: { session } } = await supabase.auth.getSession();
         
         // Clear URL parameters after getting session
-        if (authCode && session) {
-          console.log('OAuth session established, cleaning URL...');
+        if (authCode) {
+          console.log('Cleaning OAuth URL parameters...');
           window.history.replaceState({}, document.title, window.location.pathname);
         }
         
@@ -86,7 +90,7 @@ function App() {
       } finally {
         if (mounted) {
           console.log('Auth initialization complete');
-          clearTimeout(loadingTimeout);
+          clearLoadingTimeout();
           setLoading(false);
         }
       }
@@ -140,14 +144,14 @@ function App() {
       }
       
       if (mounted) {
-        clearTimeout(loadingTimeout);
+        clearLoadingTimeout();
         setLoading(false);
       }
     });
     
     return () => {
       mounted = false;
-      clearTimeout(loadingTimeout);
+      clearLoadingTimeout();
       subscription.unsubscribe();
     };
   }, []);
