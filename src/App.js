@@ -21,8 +21,22 @@ function App() {
     let mounted = true;
     let timeoutCleared = false;
     
-    // Check for tab parameter in URL
+    // Check for OAuth errors in URL
     const urlParams = new URLSearchParams(window.location.search);
+    const oauthError = urlParams.get('error');
+    const oauthErrorCode = urlParams.get('error_code');
+    const oauthErrorDesc = urlParams.get('error_description');
+    
+    if (oauthError) {
+      console.error('OAuth error detected:', oauthError, oauthErrorCode, oauthErrorDesc);
+      setAuthError(`OAuth Error: ${oauthErrorDesc || oauthError}`);
+      setLoading(false);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return; // Don't proceed with auth initialization
+    }
+    
+    // Check for tab parameter in URL
     const tabParam = urlParams.get('tab');
     if (tabParam === 'profile') {
       setInitialTab('profile');
