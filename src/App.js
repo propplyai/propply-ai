@@ -29,7 +29,15 @@ function App() {
     
     if (oauthError) {
       console.error('OAuth error detected:', oauthError, oauthErrorCode, oauthErrorDesc);
-      setAuthError(`OAuth Error: ${oauthErrorDesc || oauthError}`);
+      console.error('Current URL:', window.location.href);
+      console.error('Current origin:', window.location.origin);
+      console.error('Expected origin should match Supabase Site URL exactly');
+      
+      const friendlyError = oauthErrorCode === 'bad_oauth_callback' 
+        ? `OAuth configuration mismatch. Please verify your Supabase Site URL is exactly: ${window.location.origin} (no trailing slash, with https://)`
+        : oauthErrorDesc || oauthError;
+      
+      setAuthError(`OAuth Error: ${friendlyError}`);
       setLoading(false);
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
