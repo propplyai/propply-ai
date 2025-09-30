@@ -10,7 +10,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
-  const [initialTab, setInitialTab] = useState('dashboard');
+  const [initialTab, setInitialTab] = useState('profile'); // Default to profile for new logins
 
   // Debug initialTab changes
   useEffect(() => {
@@ -178,11 +178,11 @@ function App() {
   }, []);
 
   const handleLogin = async (userData, redirectToProfile = true) => {
-    // Set initial tab first before setting user
-    if (redirectToProfile) {
-      console.log('handleLogin: Redirecting to profile tab');
-      setInitialTab('profile');
-    }
+    console.log('handleLogin called with redirectToProfile:', redirectToProfile);
+    
+    // ALWAYS redirect to profile after login
+    console.log('handleLogin: Setting initialTab to profile');
+    setInitialTab('profile');
     
     // Get user profile after login with retry logic
     if (userData?.id) {
@@ -230,7 +230,7 @@ function App() {
     const result = await authService.signOut();
     if (result.success) {
       setUser(null);
-      setInitialTab('dashboard'); // Reset for next login
+      setInitialTab('profile'); // Will show profile on next login
     }
   };
 

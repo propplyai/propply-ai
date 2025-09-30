@@ -12,7 +12,7 @@ import ReportLibrary from './ReportLibrary';
 import TodoGenerator from './TodoGenerator';
 import UserProfile from './UserProfile';
 
-const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
+const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [properties, setProperties] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
@@ -35,13 +35,14 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
 
   // Update activeTab when initialTab prop changes
   useEffect(() => {
-    console.log('MVPDashboard: initialTab changed to:', initialTab);
+    console.log('MVPDashboard: initialTab prop is:', initialTab);
+    console.log('MVPDashboard: Setting activeTab to:', initialTab);
     setActiveTab(initialTab);
   }, [initialTab]);
 
   // Log activeTab changes for debugging
   useEffect(() => {
-    console.log('MVPDashboard: activeTab is now:', activeTab);
+    console.log('MVPDashboard: activeTab state is now:', activeTab);
   }, [activeTab]);
 
   // Fetch user profile and properties
