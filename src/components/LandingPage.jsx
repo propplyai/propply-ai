@@ -28,11 +28,14 @@ const LandingPage = ({ onLogin }) => {
         
         if (result.success) {
           console.log('Sign in successful, redirecting to profile...');
-          onLogin(result.user, true); // true = redirect to profile
+          // Keep loading state while profile loads
+          await onLogin(result.user, true); // true = redirect to profile
           setShowAuthModal(false);
           resetForm();
+          setLoading(false);
         } else {
           setError(result.error || 'Failed to sign in');
+          setLoading(false);
         }
       } else {
         // Sign Up
@@ -47,26 +50,30 @@ const LandingPage = ({ onLogin }) => {
           if (result.session && result.user) {
             // Session exists - user can login immediately
             console.log('Session available, logging in user and redirecting to profile...');
-            onLogin(result.user, true); // true = redirect to profile
+            // Keep loading state while profile loads
+            await onLogin(result.user, true); // true = redirect to profile
             setShowAuthModal(false);
             resetForm();
+            setLoading(false);
           } else if (result.user && !result.session) {
             // No session - email confirmation required
             console.log('No session - email confirmation required');
             setShowAuthModal(false);
             resetForm();
+            setLoading(false);
             alert('✅ Account created successfully!\n\nPlease check your email to verify your account, then sign in.');
           } else {
             setError('Account created but user data missing. Please try signing in.');
+            setLoading(false);
           }
         } else {
           setError(result.error || 'Failed to create account');
+          setLoading(false);
         }
       }
     } catch (error) {
       console.error('Auth error:', error);
       setError(error.message || 'An error occurred');
-    } finally {
       setLoading(false);
     }
   };

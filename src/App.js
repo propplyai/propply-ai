@@ -122,18 +122,15 @@ function App() {
       console.log('Auth state change:', event, session?.user?.email);
       
       if (session?.user) {
+        // Redirect to profile on SIGNED_IN event (new login/signup)
+        if (event === 'SIGNED_IN') {
+          console.log('User signed in via auth state change, redirecting to profile');
+          setInitialTab('profile');
+        }
+        
         try {
-          // Redirect to profile on SIGNED_IN event (new login/signup)
-          if (event === 'SIGNED_IN') {
-            console.log('User signed in, redirecting to profile');
-            setInitialTab('profile');
-          }
-          
-          // Create user profile if it doesn't exist (important for OAuth users)
-          const createResult = await authService.createUserProfile(session.user);
-          console.log('Auth state change - Profile creation:', createResult);
-          
-          if (!mounted) return;
+          // Wait a bit for database trigger
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           // Get user profile when user signs in
           const profileResult = await authService.getUserProfile(session.user.id);
@@ -142,19 +139,36 @@ function App() {
           if (!mounted) return;
           
           if (profileResult.success) {
+            console.log('Auth state change - Setting user with profile');
             setUser({
               ...session.user,
               profile: profileResult.data
             });
           } else {
-            // Set user even if profile fails to avoid infinite loading
-            console.warn('Auth state change - Profile fetch failed, setting user without profile');
-            setUser(session.user);
+            // Profile doesn't exist yet, try to create it
+            console.log('Auth state change - Profile not found, creating...');
+            await authService.createUserProfile(session.user);
+            
+            if (!mounted) return;
+            
+            // Try fetching again
+            const retryResult = await authService.getUserProfile(session.user.id);
+            if (retryResult.success) {
+              setUser({
+                ...session.user,
+                profile: retryResult.data
+              });
+            } else {
+              // Set user even if profile fails to avoid infinite loading
+              console.warn('Auth state change - Profile fetch failed after retry, setting user without profile');
+              setUser(session.user);
+            }
           }
         } catch (error) {
           console.error('Auth state change error:', error);
           if (mounted) {
             // Set user even if there's an error to avoid infinite loading
+            console.warn('Auth state change - Error occurred, setting user anyway');
             setUser(session.user);
           }
         }
@@ -165,6 +179,7 @@ function App() {
       }
       
       if (mounted) {
+        console.log('Auth state change - Clearing loading state');
         clearLoadingTimeout();
         setLoading(false);
       }
