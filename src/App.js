@@ -20,6 +20,7 @@ function App() {
   useEffect(() => {
     let mounted = true;
     let timeoutCleared = false;
+    let isInitializing = true; // Flag to prevent duplicate profile loading
     
     // Check for OAuth errors in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -196,6 +197,7 @@ function App() {
       } finally {
         if (mounted) {
           console.log('Auth initialization complete');
+          isInitializing = false; // Allow onAuthStateChange to handle future auth changes
           clearLoadingTimeout();
           setLoading(false);
         }
@@ -211,6 +213,12 @@ function App() {
       if (!mounted) return;
 
       console.log('Auth state change:', event, session?.user?.email);
+
+      // Skip handling during initial auth - initializeAuth() will handle it
+      if (isInitializing) {
+        console.log('Skipping auth state change during initialization');
+        return;
+      }
 
       if (session?.user) {
         // Redirect to profile on SIGNED_IN event (new login/signup)
