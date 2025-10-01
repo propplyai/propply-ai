@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase, APP_CONFIG } from '../config/supabase';
 import {
   Building, Users, BarChart3, Calendar, Plus, Search, Eye,
-  ArrowUpDown, CheckCircle, AlertTriangle, AlertCircle, TrendingUp, Bell, Settings,
+  ArrowUpDown, CheckCircle, AlertTriangle, AlertCircle, Bell, Settings,
   Sparkles, MapPin, X, Menu, FileText,
   ChevronDown, MoreVertical, Award, User
 } from 'lucide-react';
@@ -470,33 +470,25 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                       label: 'Total Properties', 
                       value: dashboardStats.totalProperties, 
                       icon: Building, 
-                      gradient: 'from-blue-500 to-cyan-500',
-                      change: '+2 this month',
-                      changeType: 'positive'
+                      gradient: 'from-blue-500 to-cyan-500'
                     },
                     { 
                       label: 'Compliance Rate', 
                       value: `${dashboardStats.complianceRate}%`, 
                       icon: CheckCircle, 
-                      gradient: 'from-green-500 to-emerald-500',
-                      change: '+5% from last month',
-                      changeType: 'positive'
+                      gradient: 'from-green-500 to-emerald-500'
                     },
                     { 
                       label: 'Active Violations', 
                       value: dashboardStats.totalViolations, 
                       icon: AlertTriangle, 
-                      gradient: 'from-red-500 to-pink-500',
-                      change: '-3 resolved this week',
-                      changeType: 'positive'
+                      gradient: 'from-red-500 to-pink-500'
                     },
                     { 
                       label: 'Upcoming Inspections', 
                       value: dashboardStats.upcomingInspections, 
                       icon: Calendar, 
-                      gradient: 'from-orange-500 to-amber-500',
-                      change: 'Next: Aug 15',
-                      changeType: 'neutral'
+                      gradient: 'from-orange-500 to-amber-500'
                     }
                   ].map((stat, index) => {
                     const Icon = stat.icon;
@@ -511,25 +503,12 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                                 <Icon className="h-6 w-6 text-white" />
                               </div>
                             </div>
-                            <div className={`flex items-center space-x-1 text-xs font-medium px-3 py-1 rounded-full ${
-                              stat.changeType === 'positive' ? 'bg-green-100 text-green-700' :
-                              stat.changeType === 'negative' ? 'bg-red-100 text-red-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
-                              <TrendingUp className={`h-3 w-3 ${
-                                stat.changeType === 'positive' ? 'text-green-500' :
-                                stat.changeType === 'negative' ? 'text-red-500 transform rotate-180' :
-                                'text-gray-500'
-                              }`} />
-                              <span>Trending</span>
-                            </div>
                           </div>
                           <div className="space-y-2">
                             <p className="text-sm font-medium text-gray-600">{stat.label}</p>
                             <p className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                               {stat.value}
                             </p>
-                            <p className="text-xs text-gray-500">{stat.change}</p>
                           </div>
                         </div>
                       </div>
