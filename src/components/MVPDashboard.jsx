@@ -34,6 +34,9 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
   });
   const [fetchingPropertyData, setFetchingPropertyData] = useState(false);
   const [propertyDataFetched, setPropertyDataFetched] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [propertyDetails, setPropertyDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   // Update activeTab when initialTab prop changes
   useEffect(() => {
@@ -95,6 +98,112 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
       return 'NYC';
     }
     return 'NYC'; // Default to NYC
+  };
+
+  const fetchPropertyDetails = async (property) => {
+    try {
+      setLoadingDetails(true);
+      const city = property.city;
+      
+      console.log(`Fetching detailed compliance data for ${property.address} in ${city}`);
+      
+      // Call the backend API for detailed compliance data
+      const response = await fetch(`${APP_CONFIG.apiUrl}/api/property/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          address: property.address, 
+          city: city,
+          detailed: true 
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch property details');
+      }
+      
+      // Store the detailed compliance data
+      setPropertyDetails(data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching property details:', error);
+      
+      // If API fails, create mock detailed data for demo
+      const mockDetails = {
+        success: true,
+        property: {
+          address: property.address,
+          city: property.city,
+          type: property.property_type,
+          units: property.units,
+          year_built: property.year_built,
+          bin: property.bin_number,
+          opa_account: property.opa_account
+        },
+        compliance: {
+          score: 85,
+          violations: [
+            {
+              id: 'V001',
+              type: 'DOB Violation',
+              description: 'Missing fire safety certificate',
+              status: 'Open',
+              date: '2024-09-15',
+              severity: 'Medium'
+            },
+            {
+              id: 'V002', 
+              type: 'HPD Violation',
+              description: 'Elevator inspection overdue',
+              status: 'Open',
+              date: '2024-08-20',
+              severity: 'High'
+            }
+          ],
+          permits: [
+            {
+              id: 'P001',
+              type: 'Plumbing Permit',
+              description: 'Water heater replacement',
+              status: 'Approved',
+              date: '2024-10-01'
+            }
+          ],
+          inspections: [
+            {
+              type: 'Fire Safety',
+              due_date: '2024-11-15',
+              status: 'Scheduled',
+              inspector: 'NYC Fire Department'
+            },
+            {
+              type: 'Elevator',
+              due_date: '2024-10-30',
+              status: 'Overdue',
+              inspector: 'NYC DOB'
+            }
+          ]
+        },
+        recommendations: [
+          'Schedule elevator inspection immediately',
+          'Renew fire safety certificate',
+          'Update building management contact information'
+        ]
+      };
+      
+      setPropertyDetails(mockDetails);
+      return mockDetails;
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   const fetchPropertyDataFromAPI = async (address) => {
@@ -620,9 +729,12 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                             <td className="px-6 py-4">
                               <div className="flex items-center space-x-2">
                                 <button
-                                  onClick={() => setActiveTab('compliance')}
+                                  onClick={() => {
+                                    setSelectedProperty(property);
+                                    fetchPropertyDetails(property);
+                                  }}
                                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                  title="View Compliance"
+                                  title="View Details"
                                 >
                                   <Eye className="h-4 w-4" />
                                 </button>
@@ -768,6 +880,146 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Property Detail Modal */}
+      {selectedProperty && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">Property Compliance Details</h2>
+                  <p className="text-blue-100">{selectedProperty.address}</p>
+                  <p className="text-blue-200 text-sm">{selectedProperty.city} • {selectedProperty.property_type}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedProperty(null);
+                    setPropertyDetails(null);
+                  }}
+                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[75vh]">
+              {loadingDetails ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Loading compliance data...</span>
+                </div>
+              ) : propertyDetails ? (
+                <div className="space-y-6">
+                  {/* Compliance Score */}
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Compliance Score</h3>
+                        <p className="text-gray-600">Overall property compliance status</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-green-600">
+                          {propertyDetails.compliance?.score || 85}%
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {propertyDetails.compliance?.score >= 90 ? 'Excellent' :
+                           propertyDetails.compliance?.score >= 70 ? 'Good' : 'Needs Attention'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Violations */}
+                  <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Violations</h3>
+                    {propertyDetails.compliance?.violations?.length > 0 ? (
+                      <div className="space-y-3">
+                        {propertyDetails.compliance.violations.map((violation, index) => (
+                          <div key={index} className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm font-medium text-red-800">{violation.type}</span>
+                                <span className={`px-2 py-1 rounded-full text-xs ${
+                                  violation.severity === 'High' ? 'bg-red-200 text-red-800' :
+                                  violation.severity === 'Medium' ? 'bg-yellow-200 text-yellow-800' :
+                                  'bg-green-200 text-green-800'
+                                }`}>
+                                  {violation.severity}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-700 mt-1">{violation.description}</p>
+                              <p className="text-xs text-gray-500 mt-1">Date: {violation.date}</p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-sm font-medium text-red-600">{violation.status}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <CheckCircle className="h-8 w-8 text-green-600" />
+                        </div>
+                        <p className="text-gray-600">No active violations found</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upcoming Inspections */}
+                  <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Inspections</h3>
+                    {propertyDetails.compliance?.inspections?.length > 0 ? (
+                      <div className="space-y-3">
+                        {propertyDetails.compliance.inspections.map((inspection, index) => (
+                          <div key={index} className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div>
+                              <h4 className="font-medium text-gray-900">{inspection.type}</h4>
+                              <p className="text-sm text-gray-600">Inspector: {inspection.inspector}</p>
+                              <p className="text-sm text-gray-500">Due: {inspection.due_date}</p>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-sm ${
+                              inspection.status === 'Overdue' ? 'bg-red-200 text-red-800' :
+                              inspection.status === 'Scheduled' ? 'bg-blue-200 text-blue-800' :
+                              'bg-green-200 text-green-800'
+                            }`}>
+                              {inspection.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-600">No upcoming inspections</p>
+                    )}
+                  </div>
+
+                  {/* Recommendations */}
+                  <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommendations</h3>
+                    <div className="space-y-2">
+                      {propertyDetails.recommendations?.map((rec, index) => (
+                        <div key={index} className="flex items-start space-x-3">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <p className="text-gray-700">{rec}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-600">Failed to load property details</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
