@@ -27,33 +27,6 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     electricalPermits: false
   });
 
-  useEffect(() => {
-    if (isOpen && property) {
-      loadPropertyData();
-    }
-  }, [isOpen, property, loadPropertyData]);
-
-  const loadPropertyData = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      // First, try to get existing data
-      const response = await fetch(`/api/nyc-property-data/${property.id}`);
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        setData(result.data);
-      } else {
-        // No data yet, trigger sync
-        await syncPropertyData();
-      }
-    } catch (error) {
-      console.error('Error loading property data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [property?.id, syncPropertyData]);
-
   const syncPropertyData = useCallback(async () => {
     try {
       setSyncing(true);
@@ -80,7 +53,35 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     } finally {
       setSyncing(false);
     }
+  // eslint-disable-next-line no-use-before-define
   }, [property?.id, property?.address, property?.bin, property?.bbl, loadPropertyData]);
+
+  const loadPropertyData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // First, try to get existing data
+      const response = await fetch(`/api/nyc-property-data/${property.id}`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setData(result.data);
+      } else {
+        // No data yet, trigger sync
+        await syncPropertyData();
+      }
+    } catch (error) {
+      console.error('Error loading property data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [property?.id, syncPropertyData]);
+
+  useEffect(() => {
+    if (isOpen && property) {
+      loadPropertyData();
+    }
+  }, [isOpen, property, loadPropertyData]);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
