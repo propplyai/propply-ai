@@ -885,4 +885,8 @@ def internal_error(error):
     return render_template('propply/500.html'), 500
 
 if __name__ == '__main__':
+    # For development
     app.run(debug=True, host='0.0.0.0', port=5002)
+else:
+    # For production with Gunicorn
+    application = app
