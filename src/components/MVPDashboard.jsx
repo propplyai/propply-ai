@@ -37,7 +37,6 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
   });
   const [fetchingPropertyData, setFetchingPropertyData] = useState(false);
   const [propertyDataFetched, setPropertyDataFetched] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState(null);
   const [propertyDetails, setPropertyDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
