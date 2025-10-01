@@ -173,18 +173,14 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
         .insert([{
           address: newProperty.address,
           city: newProperty.city,
-          type: newProperty.type || 'Residential',
-          units: newProperty.units || null,
-          year_built: newProperty.yearBuilt || null,
+          property_type: newProperty.type || 'Residential',
+          units: newProperty.units ? parseInt(newProperty.units) : null,
+          year_built: newProperty.yearBuilt ? parseInt(newProperty.yearBuilt) : null,
           contact_name: newProperty.contact || null,
           management_company: newProperty.managementCompany || null,
           bin_number: newProperty.bin_number || null,
           opa_account: newProperty.opa_account || null,
-          user_id: user.id,
-          compliance_score: Math.floor(Math.random() * 30) + 70,
-          violations: Math.floor(Math.random() * 5),
-          next_inspection: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          status: 'Active'
+          user_id: user.id
         }])
         .select();
 
@@ -214,8 +210,8 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
   const filteredAndSortedProperties = () => {
     let filtered = properties.filter(property => {
       const matchesSearch = property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           property.type?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesFilter = filterType === 'all' || property.type === filterType;
+                           property.property_type?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter = filterType === 'all' || property.property_type === filterType;
       return matchesSearch && matchesFilter;
     });
 
@@ -238,9 +234,9 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
 
   const dashboardStats = {
     totalProperties: properties.length,
-    complianceRate: properties.length > 0 ? Math.round(properties.reduce((acc, p) => acc + (p.compliance_score || 0), 0) / properties.length) : 0,
-    totalViolations: properties.reduce((acc, p) => acc + (p.violations || 0), 0),
-    upcomingInspections: properties.filter(p => new Date(p.next_inspection) <= new Date(Date.now() + 30*24*60*60*1000)).length
+    complianceRate: 85, // Default compliance rate since we don't have compliance_score column yet
+    totalViolations: 0, // Default since we don't have violations column yet
+    upcomingInspections: 0 // Default since we don't have next_inspection column yet
   };
 
   const navigationTabs = [
@@ -603,29 +599,22 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                             </td>
                             <td className="px-6 py-4">
                               <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                                property.type === 'Residential' ? 'bg-green-100 text-green-800' :
-                                property.type === 'Commercial' ? 'bg-blue-100 text-blue-800' :
+                                property.property_type === 'Residential' ? 'bg-green-100 text-green-800' :
+                                property.property_type === 'Commercial' ? 'bg-blue-100 text-blue-800' :
                                 'bg-purple-100 text-purple-800'
                               }`}>
-                                {property.type}
+                                {property.property_type}
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center space-x-2">
-                                <div className={`w-3 h-3 rounded-full ${
-                                  property.compliance_score >= 90 ? 'bg-green-500' :
-                                  property.compliance_score >= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}></div>
-                                <span className="font-medium">{property.compliance_score}%</span>
+                                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                <span className="font-medium">85%</span>
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm ${
-                                property.violations === 0 ? 'bg-green-100 text-green-800' :
-                                property.violations <= 2 ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {property.violations} violations
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                                0 violations
                               </span>
                             </td>
                             <td className="px-6 py-4">
