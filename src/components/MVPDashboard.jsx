@@ -102,43 +102,53 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
       setFetchingPropertyData(true);
       const city = detectCityFromAddress(address);
       
-      // For now, simulate property data fetching since backend API may not be available
-      // In production, this would call the actual API
-      console.log(`Simulating property data fetch for ${address} in ${city}`);
+      console.log(`Fetching real property data for ${address} in ${city}`);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock property data based on city
-      const mockPropertyData = {
-        address: address,
-        city: city,
-        type: city === 'NYC' ? 'Residential' : 'Commercial',
-        units: city === 'NYC' ? Math.floor(Math.random() * 50) + 10 : Math.floor(Math.random() * 20) + 5,
-        year_built: Math.floor(Math.random() * 50) + 1970,
-        bin: city === 'NYC' ? `BIN${Math.floor(Math.random() * 10000000)}` : null,
-        opa_account: city === 'Philadelphia' ? `OPA${Math.floor(Math.random() * 1000000)}` : null
-      };
-      
-      // Auto-populate the form with mock data
-      setNewProperty(prev => ({
-        ...prev,
-        address: mockPropertyData.address,
-        city: mockPropertyData.city,
-        type: mockPropertyData.type,
-        units: mockPropertyData.units.toString(),
-        yearBuilt: mockPropertyData.year_built.toString(),
-        bin_number: mockPropertyData.bin || '',
-        opa_account: mockPropertyData.opa_account || ''
-      }));
-      setPropertyDataFetched(true);
+      // Call the real backend API
+      const response = await fetch(`${APP_CONFIG.apiUrl}/api/property/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ address, city })
+      });
 
-      return { property: mockPropertyData };
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch property data');
+      }
+      
+      // Auto-populate the form with real fetched data
+      if (data.property) {
+        setNewProperty(prev => ({
+          ...prev,
+          address: data.property.address || prev.address,
+          city: data.property.city || city,
+          type: data.property.type || 'Residential',
+          units: data.property.units ? data.property.units.toString() : '',
+          yearBuilt: data.property.year_built ? data.property.year_built.toString() : '',
+          bin_number: data.property.bin || '',
+          opa_account: data.property.opa_account || ''
+        }));
+        setPropertyDataFetched(true);
+      }
+
+      return data;
     } catch (error) {
       console.error('Error fetching property data:', error);
-      // If fetch fails, just detect city and continue
+      
+      // If API fails, fall back to basic city detection
       const city = detectCityFromAddress(address);
       setNewProperty(prev => ({ ...prev, city }));
+      
+      // Show error message to user
+      alert(`Unable to fetch property data: ${error.message}. Please check the address and try again.`);
+      
       return null;
     } finally {
       setFetchingPropertyData(false);
@@ -690,7 +700,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                     <div className="text-sm text-blue-700">
                       <p className="font-semibold">Fetching property data from {detectCityFromAddress(newProperty.address)}...</p>
-                      <p className="text-xs mt-1">We're gathering compliance information, violations, permits, and more.</p>
+                      <p className="text-xs mt-1">Searching NYC/Philly Open Data for violations, permits, inspections, and compliance records.</p>
                     </div>
                   </div>
                 </div>
@@ -712,7 +722,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                         {newProperty.opa_account && <p>🔢 OPA: {newProperty.opa_account}</p>}
                       </div>
                       <p className="text-xs mt-2 text-gray-600">
-                        <span className="font-medium">Demo Mode:</span> Using sample data. In production, this would fetch real property data from NYC/Philly Open Data APIs.
+                        <span className="font-medium">Real Data:</span> Retrieved from {newProperty.city} Open Data APIs including violations, permits, and compliance information.
                       </p>
                       <p className="text-xs mt-1 text-gray-600">Click "Add Property" below to save this to your dashboard.</p>
                     </div>
