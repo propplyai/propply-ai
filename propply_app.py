@@ -10,9 +10,14 @@ import json
 import os
 import uuid
 import asyncio
+import logging
 from datetime import datetime, timedelta
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 from nyc_opendata_client import NYCOpenDataClient
 from nyc_property_finder import search_property_by_address, get_property_compliance
+from nyc_data_sync_service import NYCDataSyncService
 from philly_enhanced_data_client import PhillyEnhancedDataClient
 from philly_property_finder import search_property_by_address as philly_search_property, get_property_compliance as philly_get_compliance
 from mechanical_systems_client import MechanicalSystemsClient
@@ -30,6 +35,13 @@ ai_analyzer = AIComplianceAnalyzer()
 vendor_marketplace = SimpleVendorMarketplace(
     apify_token=os.getenv('APIFY_TOKEN')
 )
+
+# Initialize NYC data sync service
+try:
+    nyc_sync_service = NYCDataSyncService()
+except Exception as e:
+    print(f"Warning: NYC Sync Service initialization failed: {e}")
+    nyc_sync_service = None
 
 def get_client(city='NYC'):
     """Get Open Data client with config for specified city"""
@@ -450,6 +462,96 @@ def api_ai_callback():
     except Exception as e:
         print(f"AI Callback error: {e}")
         return jsonify({'error': f'AI callback processing failed: {str(e)}'}), 500
+
+@app.route('/api/sync-nyc-property', methods=['POST'])
+def api_sync_nyc_property():
+    """
+    Sync NYC Open Data to Supabase for a specific property
+    
+    Flow: Frontend → This endpoint → NYC APIs → Supabase storage
+    
+    Request body:
+    {
+        "property_id": "uuid",
+        "address": "666 Broadway, New York, NY 10012",
+        "bin": "1001620" (optional),
+        "bbl": "1001620001" (optional)
+    }
+    """
+    try:
+        if not nyc_sync_service:
+            return jsonify({'error': 'NYC Sync Service not available. Check Supabase configuration.'}), 500
+        
+        data = request.get_json()
+        property_id = data.get('property_id')
+        address = data.get('address')
+        bin_number = data.get('bin')
+        bbl = data.get('bbl')
+        
+        if not property_id or not address:
+            return jsonify({'error': 'property_id and address are required'}), 400
+        
+        logger.info(f"🗽 Starting NYC sync for property {property_id}: {address}")
+        
+        # Run sync
+        result = nyc_sync_service.sync_property_data(
+            property_id=property_id,
+            address=address,
+            bin_number=bin_number,
+            bbl=bbl
+        )
+        
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': 'NYC data synced successfully',
+                'data': result
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'NYC sync completed with errors',
+                'data': result
+            }), 500
+        
+    except Exception as e:
+        logger.error(f"NYC sync error: {e}", exc_info=True)
+        return jsonify({'error': f'NYC sync failed: {str(e)}'}), 500
+
+@app.route('/api/nyc-property-data/<property_id>', methods=['GET'])
+def api_get_nyc_property_data(property_id):
+    """
+    Get all stored NYC compliance data for a property from Supabase
+    
+    Returns:
+    - Property info (BIN, BBL, address)
+    - Compliance summary (score, risk level)
+    - DOB violations
+    - HPD violations  
+    - Elevator inspections
+    - Boiler inspections
+    - 311 complaints
+    """
+    try:
+        if not nyc_sync_service:
+            return jsonify({'error': 'NYC Sync Service not available'}), 500
+        
+        logger.info(f"📊 Fetching NYC data for property {property_id}")
+        
+        # Get data from Supabase
+        data = nyc_sync_service.get_property_compliance_data(property_id)
+        
+        if 'error' in data:
+            return jsonify({'error': data['error']}), 404
+        
+        return jsonify({
+            'success': True,
+            'data': data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching NYC data: {e}", exc_info=True)
+        return jsonify({'error': f'Failed to fetch NYC data: {str(e)}'}), 500
 
 @app.route('/api/dashboard-data')
 def api_dashboard_data():
