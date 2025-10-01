@@ -3,8 +3,8 @@ import { supabase, APP_CONFIG } from '../config/supabase';
 import {
   Building, Users, BarChart3, Calendar, Plus, Search, Eye,
   ArrowUpDown, CheckCircle, AlertTriangle, TrendingUp, Bell, Settings,
-  Sparkles, MapPin, X, Menu, FileText, Home, Phone, Briefcase,
-  ChevronDown, MoreVertical, Award, Globe, User
+  Sparkles, MapPin, X, Menu, FileText,
+  ChevronDown, MoreVertical, Award, User
 } from 'lucide-react';
 import CompliancePunchList from './CompliancePunchList';
 import VendorRFP from './VendorRFP';
