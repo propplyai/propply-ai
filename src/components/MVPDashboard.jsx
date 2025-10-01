@@ -11,6 +11,7 @@ import VendorRFP from './VendorRFP';
 import ReportLibrary from './ReportLibrary';
 import TodoGenerator from './TodoGenerator';
 import UserProfile from './UserProfile';
+import PropertyDetailModal from './PropertyDetailModal';
 
 const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -23,6 +24,8 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
   const [sortDirection, setSortDirection] = useState('asc');
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showPropertyModal, setShowPropertyModal] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
   const [newProperty, setNewProperty] = useState({
     address: '',
     city: 'NYC',
@@ -102,107 +105,20 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
 
   const fetchPropertyDetails = async (property) => {
     try {
-      setLoadingDetails(true);
-      const city = property.city;
+      console.log(`Opening PropertyDetailModal for ${property.address}`);
       
-      console.log(`Fetching detailed compliance data for ${property.address} in ${city}`);
-      
-      // Call the backend API for detailed compliance data
-      const response = await fetch(`${APP_CONFIG.apiUrl}/api/property/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          address: property.address, 
-          city: city,
-          detailed: true 
-        })
+      // Set the selected property and open the modal
+      setSelectedProperty({
+        id: property.id,
+        address: property.address,
+        bin: property.bin_number,
+        bbl: property.bbl,
+        city: property.city
       });
-
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      setShowPropertyModal(true);
       
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch property details');
-      }
-      
-      // Store the detailed compliance data
-      setPropertyDetails(data);
-      return data;
     } catch (error) {
-      console.error('Error fetching property details:', error);
-      
-      // If API fails, create mock detailed data for demo
-      const mockDetails = {
-        success: true,
-        property: {
-          address: property.address,
-          city: property.city,
-          type: property.property_type,
-          units: property.units,
-          year_built: property.year_built,
-          bin: property.bin_number,
-          opa_account: property.opa_account
-        },
-        compliance: {
-          score: 85,
-          violations: [
-            {
-              id: 'V001',
-              type: 'DOB Violation',
-              description: 'Missing fire safety certificate',
-              status: 'Open',
-              date: '2024-09-15',
-              severity: 'Medium'
-            },
-            {
-              id: 'V002', 
-              type: 'HPD Violation',
-              description: 'Elevator inspection overdue',
-              status: 'Open',
-              date: '2024-08-20',
-              severity: 'High'
-            }
-          ],
-          permits: [
-            {
-              id: 'P001',
-              type: 'Plumbing Permit',
-              description: 'Water heater replacement',
-              status: 'Approved',
-              date: '2024-10-01'
-            }
-          ],
-          inspections: [
-            {
-              type: 'Fire Safety',
-              due_date: '2024-11-15',
-              status: 'Scheduled',
-              inspector: 'NYC Fire Department'
-            },
-            {
-              type: 'Elevator',
-              due_date: '2024-10-30',
-              status: 'Overdue',
-              inspector: 'NYC DOB'
-            }
-          ]
-        },
-        recommendations: [
-          'Schedule elevator inspection immediately',
-          'Renew fire safety certificate',
-          'Update building management contact information'
-        ]
-      };
-      
-      setPropertyDetails(mockDetails);
-      return mockDetails;
-    } finally {
-      setLoadingDetails(false);
+      console.error('Error opening property details:', error);
     }
   };
 
@@ -1023,6 +939,16 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
           </div>
         </div>
       )}
+
+      {/* Property Detail Modal */}
+      <PropertyDetailModal
+        property={selectedProperty}
+        isOpen={showPropertyModal}
+        onClose={() => {
+          setShowPropertyModal(false);
+          setSelectedProperty(null);
+        }}
+      />
     </div>
   );
 };
