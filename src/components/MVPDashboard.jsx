@@ -102,37 +102,38 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
       setFetchingPropertyData(true);
       const city = detectCityFromAddress(address);
       
-      // Call backend API to fetch property data
-      const response = await fetch(`${APP_CONFIG.apiUrl || ''}/api/property/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ address, city })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch property data');
-      }
-
-      const data = await response.json();
+      // For now, simulate property data fetching since backend API may not be available
+      // In production, this would call the actual API
+      console.log(`Simulating property data fetch for ${address} in ${city}`);
       
-      // Auto-populate the form with fetched data
-      if (data.property) {
-        setNewProperty(prev => ({
-          ...prev,
-          address: data.property.address || prev.address,
-          city: data.property.city || city,
-          type: data.property.type || data.property.property_type || 'Residential',
-          units: data.property.units || data.property.unit_count || '',
-          yearBuilt: data.property.year_built || data.property.yearBuilt || '',
-          bin_number: data.property.bin || '',
-          opa_account: data.property.opa_account || ''
-        }));
-        setPropertyDataFetched(true);
-      }
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Mock property data based on city
+      const mockPropertyData = {
+        address: address,
+        city: city,
+        type: city === 'NYC' ? 'Residential' : 'Commercial',
+        units: city === 'NYC' ? Math.floor(Math.random() * 50) + 10 : Math.floor(Math.random() * 20) + 5,
+        year_built: Math.floor(Math.random() * 50) + 1970,
+        bin: city === 'NYC' ? `BIN${Math.floor(Math.random() * 10000000)}` : null,
+        opa_account: city === 'Philadelphia' ? `OPA${Math.floor(Math.random() * 1000000)}` : null
+      };
+      
+      // Auto-populate the form with mock data
+      setNewProperty(prev => ({
+        ...prev,
+        address: mockPropertyData.address,
+        city: mockPropertyData.city,
+        type: mockPropertyData.type,
+        units: mockPropertyData.units.toString(),
+        yearBuilt: mockPropertyData.year_built.toString(),
+        bin_number: mockPropertyData.bin || '',
+        opa_account: mockPropertyData.opa_account || ''
+      }));
+      setPropertyDataFetched(true);
 
-      return data;
+      return { property: mockPropertyData };
     } catch (error) {
       console.error('Error fetching property data:', error);
       // If fetch fails, just detect city and continue
@@ -710,7 +711,10 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                         {newProperty.bin_number && <p>🔢 BIN: {newProperty.bin_number}</p>}
                         {newProperty.opa_account && <p>🔢 OPA: {newProperty.opa_account}</p>}
                       </div>
-                      <p className="text-xs mt-2 text-gray-600">Click "Add Property" below to save this to your dashboard.</p>
+                      <p className="text-xs mt-2 text-gray-600">
+                        <span className="font-medium">Demo Mode:</span> Using sample data. In production, this would fetch real property data from NYC/Philly Open Data APIs.
+                      </p>
+                      <p className="text-xs mt-1 text-gray-600">Click "Add Property" below to save this to your dashboard.</p>
                     </div>
                   </div>
                 </div>
