@@ -38,16 +38,34 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
       if (result.success && result.data) {
         setData(result.data);
       } else {
-        // No data yet, trigger sync
-        await syncPropertyData();
+        // No data yet, trigger sync by calling the sync API directly
+        const syncResponse = await fetch('/api/sync-nyc-property', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: property.id,
+            address: property.address,
+            bin: property.bin,
+            bbl: property.bbl
+          })
+        });
+        
+        const syncResult = await syncResponse.json();
+        if (syncResult.success) {
+          // Reload data after sync
+          const reloadResponse = await fetch(`/api/nyc-property-data/${property.id}`);
+          const reloadResult = await reloadResponse.json();
+          if (reloadResult.success && reloadResult.data) {
+            setData(reloadResult.data);
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading property data:', error);
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line no-use-before-define
-  }, [property?.id, syncPropertyData]);
+  }, [property?.id, property?.address, property?.bin, property?.bbl]);
 
   const syncPropertyData = useCallback(async () => {
     try {
