@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase, APP_CONFIG } from '../config/supabase';
 import {
   Building, Users, BarChart3, Calendar, Plus, Search, Eye,
-  ArrowUpDown, CheckCircle, AlertTriangle, TrendingUp, Bell, Settings,
+  ArrowUpDown, CheckCircle, AlertTriangle, AlertCircle, TrendingUp, Bell, Settings,
   Sparkles, MapPin, X, Menu, FileText,
   ChevronDown, MoreVertical, Award, User
 } from 'lucide-react';
