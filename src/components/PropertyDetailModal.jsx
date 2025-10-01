@@ -33,7 +33,8 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
       setLoading(true);
       
       // First, try to get existing data from backend
-      const response = await fetch(`${APP_CONFIG.apiUrl}/api/nyc-property-data/${property.id}`);
+      const apiUrl = APP_CONFIG.apiUrl || window.location.origin;
+      const response = await fetch(`${apiUrl}/api/nyc-property-data/${property.id}`);
       const result = await response.json();
       
       if (result.success && result.data) {
@@ -54,7 +55,8 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     try {
       setSyncing(true);
       
-      const response = await fetch(`${APP_CONFIG.apiUrl}/api/sync-nyc-property`, {
+      const apiUrl = APP_CONFIG.apiUrl || window.location.origin;
+      const response = await fetch(`${apiUrl}/api/sync-nyc-property`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

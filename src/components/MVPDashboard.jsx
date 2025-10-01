@@ -128,7 +128,8 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
       console.log(`Fetching real property data for ${address} in ${city}`);
       
       // Call the real backend API
-      const response = await fetch(`${APP_CONFIG.apiUrl}/api/property/search`, {
+      const apiUrl = APP_CONFIG.apiUrl || window.location.origin;
+      const response = await fetch(`${apiUrl}/api/property/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
