@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase configuration for MVP
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://your-project-ref.supabase.co';
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'your-anon-key';
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://squmtocfnsgqadkqpbxl.supabase.co';
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxdW10b2NmbnNncWFka3FwYnhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1Njc0MDYsImV4cCI6MjA3MzE0MzQwNn0.95Z8JVu40tjXwVFL8kitCmG6ZG0RTi-b2qYbq5-XFGk';
 
 // Validate environment variables
-if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('your-project-ref') || supabaseKey.includes('your-anon-key')) {
+if (!supabaseUrl || !supabaseKey) {
   console.warn('⚠️  Supabase environment variables not configured. Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in your .env file.');
   console.warn('📖 See AUTHENTICATION_SETUP.md for setup instructions.');
 }
