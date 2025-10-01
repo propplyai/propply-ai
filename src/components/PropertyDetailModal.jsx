@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { APP_CONFIG } from '../config/supabase';
 import {
   X, Building, MapPin, AlertTriangle, CheckCircle, ChevronDown, ChevronUp,
   Calendar, Flame, Wrench, Home, FileText, Shield
@@ -31,67 +32,51 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     try {
       setLoading(true);
       
-      // Create mock compliance data for demonstration
-      const mockData = {
-        property: {
-          id: property.id,
-          address: property.address,
-          bin: property.bin,
-          bbl: property.bbl,
-          borough: 'Manhattan',
-          last_synced_at: new Date().toISOString()
-        },
-        compliance_summary: {
-          compliance_score: Math.floor(Math.random() * 30) + 70, // 70-100
-          total_violations: Math.floor(Math.random() * 5),
-          open_violations: Math.floor(Math.random() * 3),
-          risk_level: ['LOW', 'MEDIUM', 'HIGH'][Math.floor(Math.random() * 3)],
-          critical_issues: Math.floor(Math.random() * 2),
-          equipment_status: 'OK',
-          last_calculated: new Date().toISOString()
-        },
-        elevators: [
-          {
-            device_number: 'EL-001',
-            device_type: 'Passenger Elevator',
-            device_status: 'ACTIVE',
-            last_inspection_date: '2024-01-15'
-          }
-        ],
-        boilers: [
-          {
-            device_number: 'BL-001',
-            status: 'ACTIVE',
-            inspection_date: '2024-01-10'
-          }
-        ],
-        dob_violations: [],
-        hpd_violations: []
-      };
+      // First, try to get existing data from backend
+      const response = await fetch(`${APP_CONFIG.apiUrl}/api/nyc-property-data/${property.id}`);
+      const result = await response.json();
       
-      setData(mockData);
+      if (result.success && result.data) {
+        setData(result.data);
+      } else {
+        // No data yet, trigger sync
+        await syncPropertyData();
+      }
     } catch (error) {
       console.error('Error loading property data:', error);
     } finally {
       setLoading(false);
     }
-  }, [property?.id, property?.address, property?.bin, property?.bbl]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [property?.id]);
 
   const syncPropertyData = useCallback(async () => {
     try {
       setSyncing(true);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch(`${APP_CONFIG.apiUrl}/api/sync-nyc-property`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          property_id: property.id,
+          address: property.address,
+          bin: property.bin,
+          bbl: property.bbl
+        })
+      });
       
-      // Reload mock data with updated values
-      await loadPropertyData();
+      const result = await response.json();
+      
+      if (result.success) {
+        // Reload data after sync
+        await loadPropertyData();
+      }
     } catch (error) {
       console.error('Error syncing property:', error);
     } finally {
       setSyncing(false);
     }
-  }, [loadPropertyData]);
+  }, [property?.id, property?.address, property?.bin, property?.bbl, loadPropertyData]);
 
   useEffect(() => {
     if (isOpen && property) {

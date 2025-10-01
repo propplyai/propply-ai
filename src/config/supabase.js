@@ -38,7 +38,7 @@ export const APP_CONFIG = {
   name: 'Propply AI',
   version: '1.0.0',
   supportedCities: ['NYC', 'Philadelphia'],
-  apiUrl: process.env.REACT_APP_API_URL || 'https://api.propply.ai',
+  apiUrl: process.env.REACT_APP_API_URL || '',
   subscriptionTiers: {
     free: {
       id: 'free',

@@ -25,7 +25,10 @@ from ai_compliance_analyzer import AIComplianceAnalyzer
 from simple_vendor_marketplace import SimpleVendorMarketplace
 from stripe_service import stripe_service
 
-app = Flask(__name__, static_folder='static', static_url_path='/static')
+app = Flask(__name__, 
+           static_folder='build', 
+           static_url_path='/static',
+           template_folder='build')
 CORS(app)  # Enable CORS for React frontend
 
 # Initialize AI analyzer
@@ -981,6 +984,20 @@ def stripe_webhook():
 @app.errorhandler(404)
 def not_found(error):
     return render_template('propply/404.html'), 404
+
+# Serve React app for all non-API routes
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react_app(path):
+    """Serve the React app for all non-API routes"""
+    # Don't serve React app for API routes
+    if path.startswith('api/'):
+        return jsonify({'error': 'API endpoint not found'}), 404
+    
+    try:
+        return send_file('build/index.html')
+    except FileNotFoundError:
+        return jsonify({'error': 'React app not built. Please run npm run build first.'}), 500
 
 @app.errorhandler(500)
 def internal_error(error):

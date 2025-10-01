@@ -1,36 +1,35 @@
 services:
   - type: web
-    name: propply-ai-frontend
-    runtime: node
-    buildCommand: npm ci --legacy-peer-deps && npm run build
-    startCommand: npm run serve
-    envVars:
-      - key: NODE_VERSION
-        value: 18.20.5
-      - key: CI
-        value: false
-      - key: NODE_ENV
-        value: production
-      - key: GENERATE_SOURCEMAP
-        value: false
-      - key: REACT_APP_API_URL
-        value: https://propply-ai-backend.onrender.com
-    # Add your Supabase environment variables in Render dashboard:
-    # REACT_APP_SUPABASE_URL
-    # REACT_APP_SUPABASE_ANON_KEY
-    # REACT_APP_STRIPE_PUBLISHABLE_KEY
-
-  - type: web
-    name: propply-ai-backend
+    name: propply-ai
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      # Install Python dependencies
+      pip install -r requirements.txt
+      # Install Node.js dependencies and build React app
+      curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+      apt-get install -y nodejs
+      npm ci --legacy-peer-deps
+      npm run build
     startCommand: python propply_app.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: NODE_VERSION
+        value: 18.20.5
       - key: FLASK_ENV
         value: production
-    # Add your API keys in Render dashboard:
+      - key: NODE_ENV
+        value: production
+      - key: CI
+        value: false
+      - key: GENERATE_SOURCEMAP
+        value: false
+      - key: REACT_APP_API_URL
+        value: https://propply-ai.onrender.com
+    # Add your environment variables in Render dashboard:
+    # REACT_APP_SUPABASE_URL
+    # REACT_APP_SUPABASE_ANON_KEY
+    # REACT_APP_STRIPE_PUBLISHABLE_KEY
     # NYC_OPEN_DATA_API_KEY
     # PHILLY_OPEN_DATA_API_KEY
     # STRIPE_SECRET_KEY
