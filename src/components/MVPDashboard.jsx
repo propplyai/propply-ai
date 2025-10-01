@@ -74,7 +74,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
       setLoading(true);
       const { data, error } = await supabase
         .from('properties')
-        .select('*')
+        .select('id, address, city, property_type, units, year_built, contact_name, management_company, bin_number, opa_account, user_id, created_at, updated_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -182,7 +182,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
           opa_account: newProperty.opa_account || null,
           user_id: user.id
         }])
-        .select();
+        .select('id, address, city, property_type, units, year_built, contact_name, management_company, bin_number, opa_account, user_id, created_at, updated_at');
 
       if (error) throw error;
 
