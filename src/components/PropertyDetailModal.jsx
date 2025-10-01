@@ -27,35 +27,6 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     electricalPermits: false
   });
 
-  const syncPropertyData = useCallback(async () => {
-    try {
-      setSyncing(true);
-      
-      const response = await fetch('/api/sync-nyc-property', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          property_id: property.id,
-          address: property.address,
-          bin: property.bin,
-          bbl: property.bbl
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        // Reload data after sync
-        await loadPropertyData();
-      }
-    } catch (error) {
-      console.error('Error syncing property:', error);
-    } finally {
-      setSyncing(false);
-    }
-  // eslint-disable-next-line no-use-before-define
-  }, [property?.id, property?.address, property?.bin, property?.bbl, loadPropertyData]);
-
   const loadPropertyData = useCallback(async () => {
     try {
       setLoading(true);
@@ -75,7 +46,40 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     } finally {
       setLoading(false);
     }
+  // eslint-disable-next-line no-use-before-define
   }, [property?.id, syncPropertyData]);
+
+  const syncPropertyData = useCallback(async () => {
+    try {
+      setSyncing(true);
+      
+      const response = await fetch('/api/sync-nyc-property', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          property_id: property.id,
+          address: property.address,
+          bin: property.bin,
+          bbl: property.bbl
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Reload data after sync by calling the API again
+        const reloadResponse = await fetch(`/api/nyc-property-data/${property.id}`);
+        const reloadResult = await reloadResponse.json();
+        if (reloadResult.success && reloadResult.data) {
+          setData(reloadResult.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing property:', error);
+    } finally {
+      setSyncing(false);
+    }
+  }, [property?.id, property?.address, property?.bin, property?.bbl]);
 
   useEffect(() => {
     if (isOpen && property) {
