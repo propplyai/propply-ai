@@ -38,7 +38,6 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
   const [fetchingPropertyData, setFetchingPropertyData] = useState(false);
   const [propertyDataFetched, setPropertyDataFetched] = useState(false);
   const [propertyDetails, setPropertyDetails] = useState(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
 
   // Update activeTab when initialTab prop changes
   useEffect(() => {
@@ -823,7 +822,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
             </div>
             
             <div className="p-6 overflow-y-auto max-h-[75vh]">
-              {loadingDetails ? (
+              {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   <span className="ml-3 text-gray-600">Loading compliance data...</span>

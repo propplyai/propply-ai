@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   X, Building, MapPin, AlertTriangle, CheckCircle, ChevronDown, ChevronUp,
-  Calendar, DollarSign, Flame, Zap, Wrench, Home, Droplets, FileText, 
-  TrendingUp, Shield, Clock, ExternalLink, Download
+  Calendar, Flame, Wrench, Home, FileText, Shield
 } from 'lucide-react';
 
 /**
@@ -32,9 +31,9 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     if (isOpen && property) {
       loadPropertyData();
     }
-  }, [isOpen, property]);
+  }, [isOpen, property, loadPropertyData]);
 
-  const loadPropertyData = async () => {
+  const loadPropertyData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -53,9 +52,9 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [property?.id, syncPropertyData]);
 
-  const syncPropertyData = async () => {
+  const syncPropertyData = useCallback(async () => {
     try {
       setSyncing(true);
       
@@ -81,7 +80,7 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     } finally {
       setSyncing(false);
     }
-  };
+  }, [property?.id, property?.address, property?.bin, property?.bbl, loadPropertyData]);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
