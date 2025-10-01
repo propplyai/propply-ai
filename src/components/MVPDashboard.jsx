@@ -125,47 +125,40 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
       setFetchingPropertyData(true);
       const city = detectCityFromAddress(address);
       
-      console.log(`Fetching real property data for ${address} in ${city}`);
+      console.log(`Simulating property data fetch for ${address} in ${city}`);
       
-      // Call the real backend API
-      const response = await fetch(`${APP_CONFIG.apiUrl}/api/property/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ address, city })
-      });
-
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch property data');
-      }
+      // Generate mock property data
+      const mockProperty = {
+        address: address,
+        city: city,
+        type: ['Residential', 'Commercial', 'Mixed Use'][Math.floor(Math.random() * 3)],
+        units: Math.floor(Math.random() * 50) + 1,
+        year_built: Math.floor(Math.random() * 50) + 1970,
+        bin: Math.floor(Math.random() * 900000) + 100000,
+        opa_account: Math.floor(Math.random() * 900000) + 100000
+      };
       
-      // Auto-populate the form with real fetched data
-      if (data.property) {
-        setNewProperty(prev => ({
-          ...prev,
-          address: data.property.address || prev.address,
-          city: data.property.city || city,
-          type: data.property.type || 'Residential',
-          units: data.property.units ? data.property.units.toString() : '',
-          yearBuilt: data.property.year_built ? data.property.year_built.toString() : '',
-          bin_number: data.property.bin || '',
-          opa_account: data.property.opa_account || ''
-        }));
-        setPropertyDataFetched(true);
-      }
+      // Auto-populate the form with mock data
+      setNewProperty(prev => ({
+        ...prev,
+        address: mockProperty.address,
+        city: mockProperty.city,
+        type: mockProperty.type,
+        units: mockProperty.units.toString(),
+        yearBuilt: mockProperty.year_built.toString(),
+        bin_number: mockProperty.bin.toString(),
+        opa_account: mockProperty.opa_account.toString()
+      }));
+      setPropertyDataFetched(true);
 
-      return data;
+      return { success: true, property: mockProperty };
     } catch (error) {
       console.error('Error fetching property data:', error);
       
-      // If API fails, fall back to basic city detection
+      // If simulation fails, fall back to basic city detection
       const city = detectCityFromAddress(address);
       setNewProperty(prev => ({ ...prev, city }));
       

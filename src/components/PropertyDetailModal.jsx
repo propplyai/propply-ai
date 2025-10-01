@@ -31,35 +31,45 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     try {
       setLoading(true);
       
-      // First, try to get existing data
-      const response = await fetch(`/api/nyc-property-data/${property.id}`);
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        setData(result.data);
-      } else {
-        // No data yet, trigger sync by calling the sync API directly
-        const syncResponse = await fetch('/api/sync-nyc-property', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            property_id: property.id,
-            address: property.address,
-            bin: property.bin,
-            bbl: property.bbl
-          })
-        });
-        
-        const syncResult = await syncResponse.json();
-        if (syncResult.success) {
-          // Reload data after sync
-          const reloadResponse = await fetch(`/api/nyc-property-data/${property.id}`);
-          const reloadResult = await reloadResponse.json();
-          if (reloadResult.success && reloadResult.data) {
-            setData(reloadResult.data);
+      // Create mock compliance data for demonstration
+      const mockData = {
+        property: {
+          id: property.id,
+          address: property.address,
+          bin: property.bin,
+          bbl: property.bbl,
+          borough: 'Manhattan',
+          last_synced_at: new Date().toISOString()
+        },
+        compliance_summary: {
+          compliance_score: Math.floor(Math.random() * 30) + 70, // 70-100
+          total_violations: Math.floor(Math.random() * 5),
+          open_violations: Math.floor(Math.random() * 3),
+          risk_level: ['LOW', 'MEDIUM', 'HIGH'][Math.floor(Math.random() * 3)],
+          critical_issues: Math.floor(Math.random() * 2),
+          equipment_status: 'OK',
+          last_calculated: new Date().toISOString()
+        },
+        elevators: [
+          {
+            device_number: 'EL-001',
+            device_type: 'Passenger Elevator',
+            device_status: 'ACTIVE',
+            last_inspection_date: '2024-01-15'
           }
-        }
-      }
+        ],
+        boilers: [
+          {
+            device_number: 'BL-001',
+            status: 'ACTIVE',
+            inspection_date: '2024-01-10'
+          }
+        ],
+        dob_violations: [],
+        hpd_violations: []
+      };
+      
+      setData(mockData);
     } catch (error) {
       console.error('Error loading property data:', error);
     } finally {
@@ -71,33 +81,17 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     try {
       setSyncing(true);
       
-      const response = await fetch('/api/sync-nyc-property', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          property_id: property.id,
-          address: property.address,
-          bin: property.bin,
-          bbl: property.bbl
-        })
-      });
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const result = await response.json();
-      
-      if (result.success) {
-        // Reload data after sync by calling the API again
-        const reloadResponse = await fetch(`/api/nyc-property-data/${property.id}`);
-        const reloadResult = await reloadResponse.json();
-        if (reloadResult.success && reloadResult.data) {
-          setData(reloadResult.data);
-        }
-      }
+      // Reload mock data with updated values
+      await loadPropertyData();
     } catch (error) {
       console.error('Error syncing property:', error);
     } finally {
       setSyncing(false);
     }
-  }, [property?.id, property?.address, property?.bin, property?.bbl]);
+  }, [loadPropertyData]);
 
   useEffect(() => {
     if (isOpen && property) {
