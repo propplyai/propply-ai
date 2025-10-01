@@ -166,6 +166,88 @@ def add_property_post():
         return jsonify({'error': f'Failed to add property: {str(e)}'}), 500
 
 # API Endpoints
+@app.route('/api/property/search', methods=['POST'])
+def api_property_search():
+    """Enhanced property search with auto-populated data for simplified form"""
+    try:
+        data = request.get_json()
+        address = data.get('address', '').strip()
+        city = data.get('city', 'NYC').upper()
+        
+        if not address:
+            return jsonify({'error': 'Address is required'}), 400
+        
+        # Auto-detect city from address
+        if 'philadelphia' in address.lower() or 'philly' in address.lower() or ', pa' in address.lower():
+            city = 'Philadelphia'
+        elif any(borough in address.lower() for borough in ['brooklyn', 'queens', 'bronx', 'manhattan', 'staten island']) or ', ny' in address.lower() or 'new york' in address.lower():
+            city = 'NYC'
+        
+        property_data = {
+            'address': address,
+            'city': city,
+            'type': 'Residential',  # Default
+            'units': None,
+            'year_built': None,
+            'bin': None,
+            'opa_account': None
+        }
+        
+        try:
+            if city == 'NYC':
+                # Use NYC Property Finder
+                from nyc_property_finder_enhanced import NYCPropertyFinder
+                finder = NYCPropertyFinder()
+                results = finder.search_property_by_address(address)
+                
+                if results and len(results) > 0:
+                    best_match = results[0]
+                    property_data.update({
+                        'bin': best_match.get('bin'),
+                        'borough': best_match.get('borough'),
+                        'address': best_match.get('address', address)
+                    })
+                    
+                    # Try to get property details
+                    bin_number = best_match.get('bin')
+                    if bin_number:
+                        property_details = finder.get_property_compliance_analysis(bin_number)
+                        if property_details:
+                            property_data['units'] = property_details.get('property_info', {}).get('units')
+                            property_data['year_built'] = property_details.get('property_info', {}).get('year_built')
+                            property_data['type'] = property_details.get('property_info', {}).get('building_type', 'Residential')
+                            
+            elif city == 'Philadelphia':
+                # Use Philly Property Finder
+                from philly_property_finder import search_property_by_address as philly_search
+                from philly_enhanced_data_client import PhiladelphiaEnhancedDataClient
+                
+                philly_client = PhiladelphiaEnhancedDataClient()
+                results = philly_client.search_property_by_address(address)
+                
+                if results and len(results) > 0:
+                    best_match = results[0]
+                    property_data.update({
+                        'opa_account': best_match.get('opa_account') or best_match.get('parcel_number'),
+                        'address': best_match.get('location', address),
+                        'year_built': best_match.get('year_built'),
+                        'units': best_match.get('number_of_units') or best_match.get('total_livable_area', 0) // 1000 if best_match.get('total_livable_area') else None,
+                        'type': 'Residential' if 'residential' in str(best_match.get('category', '')).lower() else 'Commercial'
+                    })
+        except Exception as e:
+            print(f"Error fetching detailed property data for {city}: {e}")
+            # Continue with basic data
+        
+        return jsonify({
+            'success': True,
+            'property': property_data,
+            'message': f'Property data retrieved from {city}'
+        })
+        
+    except Exception as e:
+        print(f"Property search error: {e}")
+        return jsonify({'error': f'Failed to search property: {str(e)}'}), 500
+
 @app.route('/api/search', methods=['POST'])
 def api_search_property():
     """Search for property by address"""

@@ -1,5 +1,5 @@
 # Stripe Integration Setup Guide
-
+\
 This guide will walk you through setting up Stripe payments for Propply AI.
 
 ## Prerequisites

@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(python:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npm start:*)",
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(python3 -m pip:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nImplement full Stripe payment integration\n\nBackend Changes:\n- Add stripe_service.py with comprehensive Stripe SDK integration\n- Implement checkout session creation for subscriptions and one-time payments\n- Add customer portal session management\n- Create subscription CRUD endpoints (get, cancel, update)\n- Implement webhook handler with signature verification\n- Handle all major Stripe events (checkout, subscription, invoice)\n- Add CORS support for React frontend\n\nFrontend Changes:\n- Update stripeService to call real backend API endpoints\n- Replace mock implementations with actual Stripe Checkout flow\n- Implement proper error handling and loading states\n- Add API_BASE_URL configuration for backend communication\n\nFeatures:\n- ✅ Subscription checkout with 14-day free trial\n- ✅ One-time payment checkout\n- ✅ Customer portal for subscription management\n- ✅ Subscription cancellation (immediate or at period end)\n- ✅ Webhook processing for payment events\n- ✅ Prorated plan upgrades/downgrades\n- ✅ Automatic user profile updates on payment success\n\nConfiguration:\n- Add all required Stripe environment variables to .env.local\n- Configure Price IDs for all subscription tiers\n- Set up webhook secret for event verification\n- Add comprehensive setup documentation in STRIPE_SETUP.md\n\nDocumentation:\n- Step-by-step Stripe account setup guide\n- Product and pricing configuration instructions\n- Webhook setup for local and production\n- Test card numbers and testing procedures\n- API endpoint reference\n- Security best practices\n- Troubleshooting common issues\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

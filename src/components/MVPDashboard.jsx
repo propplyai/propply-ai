@@ -32,6 +32,8 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
     contact: '',
     managementCompany: ''
   });
+  const [fetchingPropertyData, setFetchingPropertyData] = useState(false);
+  const [propertyDataFetched, setPropertyDataFetched] = useState(false);
 
   // Update activeTab when initialTab prop changes
   useEffect(() => {
@@ -85,16 +87,88 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
     }
   }, [user.id]);
 
+  const detectCityFromAddress = (address) => {
+    const addressLower = address.toLowerCase();
+    if (addressLower.includes('philadelphia') || addressLower.includes('philly') || addressLower.includes(', pa')) {
+      return 'Philadelphia';
+    } else if (addressLower.includes('new york') || addressLower.includes('ny') || addressLower.includes('nyc') || addressLower.includes('brooklyn') || addressLower.includes('queens') || addressLower.includes('bronx') || addressLower.includes('manhattan') || addressLower.includes('staten island')) {
+      return 'NYC';
+    }
+    return 'NYC'; // Default to NYC
+  };
+
+  const fetchPropertyDataFromAPI = async (address) => {
+    try {
+      setFetchingPropertyData(true);
+      const city = detectCityFromAddress(address);
+      
+      // Call backend API to fetch property data
+      const response = await fetch(`${APP_CONFIG.apiUrl || ''}/api/property/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ address, city })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch property data');
+      }
+
+      const data = await response.json();
+      
+      // Auto-populate the form with fetched data
+      if (data.property) {
+        setNewProperty(prev => ({
+          ...prev,
+          address: data.property.address || prev.address,
+          city: data.property.city || city,
+          type: data.property.type || data.property.property_type || 'Residential',
+          units: data.property.units || data.property.unit_count || '',
+          yearBuilt: data.property.year_built || data.property.yearBuilt || '',
+          bin_number: data.property.bin || '',
+          opa_account: data.property.opa_account || ''
+        }));
+        setPropertyDataFetched(true);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching property data:', error);
+      // If fetch fails, just detect city and continue
+      const city = detectCityFromAddress(address);
+      setNewProperty(prev => ({ ...prev, city }));
+      return null;
+    } finally {
+      setFetchingPropertyData(false);
+    }
+  };
+
   const handleAddProperty = async (e) => {
     e.preventDefault();
-    if (!newProperty.address || !newProperty.units) return;
+    if (!newProperty.address) return;
 
+    // If we haven't fetched property data yet, fetch it first
+    if (!propertyDataFetched && !fetchingPropertyData) {
+      await fetchPropertyDataFromAPI(newProperty.address);
+      return;
+    }
+
+    // Now save the property to database
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('properties')
         .insert([{
-          ...newProperty,
+          address: newProperty.address,
+          city: newProperty.city,
+          type: newProperty.type || 'Residential',
+          units: newProperty.units || null,
+          year_built: newProperty.yearBuilt || null,
+          contact_name: newProperty.contact || null,
+          management_company: newProperty.managementCompany || null,
+          bin_number: newProperty.bin_number || null,
+          opa_account: newProperty.opa_account || null,
           user_id: user.id,
           compliance_score: Math.floor(Math.random() * 30) + 70,
           violations: Math.floor(Math.random() * 5),
@@ -116,6 +190,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
           contact: '',
           managementCompany: ''
         });
+        setPropertyDataFetched(false);
         setShowAddForm(false);
       }
     } catch (error) {
@@ -587,134 +662,103 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
             </div>
 
             <form onSubmit={handleAddProperty} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>Property Address *</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="123 Main Street, New York, NY 10001"
-                    value={newProperty.address}
-                    onChange={(e) => setNewProperty({...newProperty, address: e.target.value})}
-                    className="w-full px-4 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                    <Globe className="h-4 w-4" />
-                    <span>City *</span>
-                  </label>
-                  <select
-                    value={newProperty.city}
-                    onChange={(e) => setNewProperty({...newProperty, city: e.target.value})}
-                    className="w-full px-4 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700"
-                    required
-                  >
-                    <option value="NYC">New York City</option>
-                    <option value="Philadelphia">Philadelphia</option>
-                  </select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                    <Building className="h-4 w-4" />
-                    <span>Property Type *</span>
-                  </label>
-                  <select
-                    value={newProperty.type}
-                    onChange={(e) => setNewProperty({...newProperty, type: e.target.value})}
-                    className="w-full px-4 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700"
-                    required
-                  >
-                    <option value="Residential">Residential</option>
-                    <option value="Commercial">Commercial</option>
-                    <option value="Mixed Use">Mixed Use</option>
-                  </select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                    <Home className="h-4 w-4" />
-                    <span>Number of Units *</span>
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="24"
-                    value={newProperty.units}
-                    onChange={(e) => setNewProperty({...newProperty, units: e.target.value})}
-                    className="w-full px-4 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Year Built</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="1985"
-                    value={newProperty.yearBuilt}
-                    onChange={(e) => setNewProperty({...newProperty, yearBuilt: e.target.value})}
-                    className="w-full px-4 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                    <Phone className="h-4 w-4" />
-                    <span>Contact Information</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Phone or Email"
-                    value={newProperty.contact}
-                    onChange={(e) => setNewProperty({...newProperty, contact: e.target.value})}
-                    className="w-full px-4 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700"
-                  />
-                </div>
-              </div>
-              
+              {/* Address Field - Always Visible */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                  <Briefcase className="h-4 w-4" />
-                  <span>Management Company</span>
+                  <MapPin className="h-4 w-4" />
+                  <span>Property Address *</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="ABC Property Management"
-                  value={newProperty.managementCompany}
-                  onChange={(e) => setNewProperty({...newProperty, managementCompany: e.target.value})}
+                  placeholder="123 Main Street, New York, NY 10001"
+                  value={newProperty.address}
+                  onChange={(e) => {
+                    setNewProperty({...newProperty, address: e.target.value});
+                    setPropertyDataFetched(false); // Reset if user changes address
+                  }}
                   className="w-full px-4 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700"
+                  required
+                  disabled={fetchingPropertyData || loading}
                 />
               </div>
+
+              {/* Show fetching status */}
+              {fetchingPropertyData && (
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <div className="text-sm text-blue-700">
+                      <p className="font-semibold">Fetching property data from {detectCityFromAddress(newProperty.address)}...</p>
+                      <p className="text-xs mt-1">We're gathering compliance information, violations, permits, and more.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Show fetched data summary */}
+              {propertyDataFetched && !fetchingPropertyData && (
+                <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div className="text-sm text-green-700 flex-1">
+                      <p className="font-semibold">Property data retrieved successfully!</p>
+                      <div className="mt-2 space-y-1 text-xs">
+                        {newProperty.city && <p>📍 City: {newProperty.city}</p>}
+                        {newProperty.type && <p>🏢 Type: {newProperty.type}</p>}
+                        {newProperty.units && <p>🏠 Units: {newProperty.units}</p>}
+                        {newProperty.yearBuilt && <p>📅 Year Built: {newProperty.yearBuilt}</p>}
+                        {newProperty.bin_number && <p>🔢 BIN: {newProperty.bin_number}</p>}
+                        {newProperty.opa_account && <p>🔢 OPA: {newProperty.opa_account}</p>}
+                      </div>
+                      <p className="text-xs mt-2 text-gray-600">Click "Add Property" below to save this to your dashboard.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="flex flex-col sm:flex-row gap-4 pt-6">
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || fetchingPropertyData}
                   className="flex items-center justify-center space-x-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transform hover:scale-105 font-medium"
                 >
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      <span>Adding Property...</span>
+                      <span>Saving Property...</span>
                     </>
-                  ) : (
+                  ) : fetchingPropertyData ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>Fetching Data...</span>
+                    </>
+                  ) : propertyDataFetched ? (
                     <>
                       <Plus className="h-5 w-5" />
                       <span>Add Property</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-5 w-5" />
+                      <span>Fetch Property Data</span>
                     </>
                   )}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setPropertyDataFetched(false);
+                    setNewProperty({
+                      address: '',
+                      city: 'NYC',
+                      type: 'Residential',
+                      units: '',
+                      yearBuilt: '',
+                      contact: '',
+                      managementCompany: ''
+                    });
+                  }}
                   className="px-8 py-4 bg-white/80 backdrop-blur-sm border border-white/30 text-gray-700 rounded-2xl hover:bg-white/90 transition-all duration-300 font-medium"
                 >
                   Cancel
