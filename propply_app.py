@@ -448,9 +448,9 @@ def api_ai_callback():
 def api_sync_nyc_property():
     """
     Sync NYC Open Data to Supabase for a specific property
-    
+
     Flow: Frontend → This endpoint → NYC APIs → Supabase storage
-    
+
     Request body:
     {
         "property_id": "uuid",
@@ -462,18 +462,18 @@ def api_sync_nyc_property():
     try:
         if not nyc_sync_service:
             return jsonify({'error': 'NYC Sync Service not available. Check Supabase configuration.'}), 500
-        
+
         data = request.get_json()
         property_id = data.get('property_id')
         address = data.get('address')
         bin_number = data.get('bin')
         bbl = data.get('bbl')
-        
+
         if not property_id or not address:
             return jsonify({'error': 'property_id and address are required'}), 400
-        
+
         logger.info(f"🗽 Starting NYC sync for property {property_id}: {address}")
-        
+
         # Run sync
         result = nyc_sync_service.sync_property_data(
             property_id=property_id,
@@ -481,7 +481,7 @@ def api_sync_nyc_property():
             bin_number=bin_number,
             bbl=bbl
         )
-        
+
         if result.get('success'):
             return jsonify({
                 'success': True,
@@ -494,10 +494,55 @@ def api_sync_nyc_property():
                 'message': 'NYC sync completed with errors',
                 'data': result
             }), 500
-        
+
     except Exception as e:
         logger.error(f"NYC sync error: {e}", exc_info=True)
         return jsonify({'error': f'NYC sync failed: {str(e)}'}), 500
+
+@app.route('/api/nyc-comprehensive-data', methods=['POST'])
+def api_nyc_comprehensive_data():
+    """
+    Get comprehensive NYC data using the existing NYC Open Data client
+    
+    Request body:
+    {
+        "address": "140 W 28th St, New York, NY 10001",
+        "bin": "1001234" (optional),
+        "bbl": "1001234001" (optional)
+    }
+    """
+    try:
+        from nyc_opendata_client import NYCOpenDataClient
+        
+        data = request.get_json()
+        address = data.get('address')
+        bin_number = data.get('bin')
+        bbl = data.get('bbl')
+
+        if not address:
+            return jsonify({'error': 'address is required'}), 400
+
+        logger.info(f"🗽 Fetching comprehensive NYC data for: {address}")
+
+        # Initialize NYC Open Data client
+        client = NYCOpenDataClient()
+        
+        # Get comprehensive property data
+        result = client.get_comprehensive_property_data(
+            address=address,
+            bin_number=bin_number,
+            bbl=bbl
+        )
+
+        return jsonify({
+            'success': True,
+            'message': 'Comprehensive NYC data fetched successfully',
+            'data': result
+        })
+
+    except Exception as e:
+        logger.error(f"NYC comprehensive data error: {e}", exc_info=True)
+        return jsonify({'error': f'NYC data fetch failed: {str(e)}'}), 500
 
 @app.route('/api/nyc-property-data/<property_id>', methods=['GET'])
 def api_get_nyc_property_data(property_id):

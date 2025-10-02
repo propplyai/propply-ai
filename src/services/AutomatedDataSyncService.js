@@ -3,7 +3,7 @@
  * Automatically syncs NYC/Philadelphia compliance data when properties are added
  */
 
-import { supabase } from '../config/supabase';
+import { supabase, APP_CONFIG } from '../config/supabase';
 
 class AutomatedDataSyncService {
   constructor() {
@@ -95,9 +95,49 @@ class AutomatedDataSyncService {
    */
   async fetchNYCComplianceData(property, nycProperty) {
     try {
-      console.log('🔍 Fetching NYC DOB violations...');
+      console.log('🔍 Fetching comprehensive NYC data...');
       
-      // Fetch DOB violations using NYC Open Data API
+      // Use the backend API to get comprehensive data
+      const apiUrl = APP_CONFIG.apiUrl || window.location.origin;
+      const response = await fetch(`${apiUrl}/api/nyc-comprehensive-data`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address: property.address,
+          bin: property.bin_number,
+          bbl: property.opa_account
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Comprehensive NYC data fetched successfully');
+        
+        // Store all the data
+        await this.storeComprehensiveNYCData(nycProperty.id, data);
+        
+      } else {
+        console.warn('⚠️ Backend API not available, using direct API calls...');
+        await this.fetchNYCDataDirectly(property, nycProperty);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error fetching NYC compliance data:', error);
+      // Fallback to direct API calls
+      await this.fetchNYCDataDirectly(property, nycProperty);
+    }
+  }
+
+  /**
+   * Fetch NYC data directly from APIs (fallback method)
+   */
+  async fetchNYCDataDirectly(property, nycProperty) {
+    try {
+      console.log('🔍 Fetching NYC data directly from APIs...');
+      
+      // Fetch DOB violations
       const dobResponse = await fetch(
         `https://data.cityofnewyork.us/resource/3h2n-5cm9.json?$where=house_number='${this.extractHouseNumber(property.address)}' AND street='${this.extractStreet(property.address)}'&$limit=50`
       );
@@ -105,15 +145,12 @@ class AutomatedDataSyncService {
       if (dobResponse.ok) {
         const dobViolations = await dobResponse.json();
         console.log(`📋 Found ${dobViolations.length} DOB violations`);
-        
-        // Store violations in Supabase
         if (dobViolations.length > 0) {
           await this.storeDOBViolations(nycProperty.id, dobViolations);
         }
       }
       
       // Fetch HPD violations
-      console.log('🔍 Fetching NYC HPD violations...');
       const hpdResponse = await fetch(
         `https://data.cityofnewyork.us/resource/wvxf-dwi5.json?$where=house_number='${this.extractHouseNumber(property.address)}' AND street_name='${this.extractStreet(property.address)}'&$limit=50`
       );
@@ -121,10 +158,38 @@ class AutomatedDataSyncService {
       if (hpdResponse.ok) {
         const hpdViolations = await hpdResponse.json();
         console.log(`📋 Found ${hpdViolations.length} HPD violations`);
-        
-        // Store violations in Supabase
         if (hpdViolations.length > 0) {
           await this.storeHPDViolations(nycProperty.id, hpdViolations);
+        }
+      }
+      
+      // Fetch elevator inspections if we have BIN
+      if (property.bin_number) {
+        const elevatorResponse = await fetch(
+          `https://data.cityofnewyork.us/resource/ju4y-gjjz.json?$where=bin='${property.bin_number}'&$limit=50`
+        );
+        
+        if (elevatorResponse.ok) {
+          const elevatorInspections = await elevatorResponse.json();
+          console.log(`🛗 Found ${elevatorInspections.length} elevator inspections`);
+          if (elevatorInspections.length > 0) {
+            await this.storeElevatorInspections(nycProperty.id, elevatorInspections);
+          }
+        }
+      }
+      
+      // Fetch boiler inspections if we have BIN
+      if (property.bin_number) {
+        const boilerResponse = await fetch(
+          `https://data.cityofnewyork.us/resource/yb3y-jj3p.json?$where=bin='${property.bin_number}'&$limit=50`
+        );
+        
+        if (boilerResponse.ok) {
+          const boilerInspections = await boilerResponse.json();
+          console.log(`🔥 Found ${boilerInspections.length} boiler inspections`);
+          if (boilerInspections.length > 0) {
+            await this.storeBoilerInspections(nycProperty.id, boilerInspections);
+          }
         }
       }
       
@@ -132,7 +197,7 @@ class AutomatedDataSyncService {
       await this.createComplianceSummary(nycProperty.id, property);
       
     } catch (error) {
-      console.error('❌ Error fetching NYC compliance data:', error);
+      console.error('❌ Error in direct API fetch:', error);
       throw error;
     }
   }
@@ -206,6 +271,134 @@ class AutomatedDataSyncService {
   }
 
   /**
+   * Store elevator inspections in Supabase
+   */
+  async storeElevatorInspections(nycPropertyId, inspections) {
+    try {
+      const inspectionRecords = inspections.map(inspection => ({
+        nyc_property_id: nycPropertyId,
+        inspection_id: inspection.inspection_id || `ELEV-${Date.now()}`,
+        bin: inspection.bin,
+        device_number: inspection.device_number,
+        inspection_date: inspection.inspection_date,
+        inspection_type: inspection.inspection_type,
+        result: inspection.result,
+        status: inspection.status,
+        borough: inspection.borough,
+        house_number: inspection.house_number,
+        street: inspection.street,
+        zip_code: inspection.zip_code
+      }));
+
+      const { error } = await supabase
+        .from('nyc_elevator_inspections')
+        .insert(inspectionRecords);
+
+      if (error) throw error;
+      console.log(`✅ Stored ${inspectionRecords.length} elevator inspections`);
+    } catch (error) {
+      console.error('❌ Error storing elevator inspections:', error);
+    }
+  }
+
+  /**
+   * Store boiler inspections in Supabase
+   */
+  async storeBoilerInspections(nycPropertyId, inspections) {
+    try {
+      const inspectionRecords = inspections.map(inspection => ({
+        nyc_property_id: nycPropertyId,
+        inspection_id: inspection.inspection_id || `BOIL-${Date.now()}`,
+        bin: inspection.bin,
+        boiler_id: inspection.boiler_id,
+        inspection_date: inspection.inspection_date,
+        inspection_type: inspection.inspection_type,
+        result: inspection.result,
+        status: inspection.status,
+        borough: inspection.borough,
+        house_number: inspection.house_number,
+        street: inspection.street,
+        zip_code: inspection.zip_code
+      }));
+
+      const { error } = await supabase
+        .from('nyc_boiler_inspections')
+        .insert(inspectionRecords);
+
+      if (error) throw error;
+      console.log(`✅ Stored ${inspectionRecords.length} boiler inspections`);
+    } catch (error) {
+      console.error('❌ Error storing boiler inspections:', error);
+    }
+  }
+
+  /**
+   * Store comprehensive NYC data from backend API
+   */
+  async storeComprehensiveNYCData(nycPropertyId, data) {
+    try {
+      console.log('📦 Storing comprehensive NYC data...');
+      
+      // Store violations if available
+      if (data.violations?.dob_violations) {
+        await this.storeDOBViolations(nycPropertyId, data.violations.dob_violations);
+      }
+      
+      if (data.violations?.hpd_violations) {
+        await this.storeHPDViolations(nycPropertyId, data.violations.hpd_violations);
+      }
+      
+      // Store equipment inspections if available
+      if (data.elevator_inspections) {
+        await this.storeElevatorInspections(nycPropertyId, data.elevator_inspections);
+      }
+      
+      if (data.boiler_inspections) {
+        await this.storeBoilerInspections(nycPropertyId, data.boiler_inspections);
+      }
+      
+      // Store 311 complaints if available
+      if (data.complaints_311) {
+        await this.store311Complaints(nycPropertyId, data.complaints_311);
+      }
+      
+      console.log('✅ Comprehensive NYC data stored successfully');
+    } catch (error) {
+      console.error('❌ Error storing comprehensive NYC data:', error);
+    }
+  }
+
+  /**
+   * Store 311 complaints in Supabase
+   */
+  async store311Complaints(nycPropertyId, complaints) {
+    try {
+      const complaintRecords = complaints.map(complaint => ({
+        nyc_property_id: nycPropertyId,
+        complaint_id: complaint.unique_key,
+        created_date: complaint.created_date,
+        complaint_type: complaint.complaint_type,
+        descriptor: complaint.descriptor,
+        incident_address: complaint.incident_address,
+        borough: complaint.borough,
+        status: complaint.status,
+        resolution_description: complaint.resolution_description,
+        latitude: complaint.latitude,
+        longitude: complaint.longitude
+      }));
+
+      const { error } = await supabase
+        .from('nyc_311_complaints')
+        .insert(complaintRecords);
+
+      if (error) throw error;
+      console.log(`✅ Stored ${complaintRecords.length} 311 complaints`);
+    } catch (error) {
+      console.error('❌ Error storing 311 complaints:', error);
+    }
+  }
+
+  /**
    * Create compliance summary
    */
   async createComplianceSummary(nycPropertyId, property) {
@@ -221,11 +414,33 @@ class AutomatedDataSyncService {
         .select('id')
         .eq('nyc_property_id', nycPropertyId);
 
+      const { data: elevatorInspections } = await supabase
+        .from('nyc_elevator_inspections')
+        .select('id, status')
+        .eq('nyc_property_id', nycPropertyId);
+
+      const { data: boilerInspections } = await supabase
+        .from('nyc_boiler_inspections')
+        .select('id, status')
+        .eq('nyc_property_id', nycPropertyId);
+
+      const { data: complaints311 } = await supabase
+        .from('nyc_311_complaints')
+        .select('id')
+        .eq('nyc_property_id', nycPropertyId);
+
       const totalViolations = (dobViolations?.length || 0) + (hpdViolations?.length || 0);
       const openViolations = totalViolations; // Simplified - in real implementation, check status
+      const equipmentIssues = (elevatorInspections?.filter(e => e.status === 'FAIL')?.length || 0) + 
+                             (boilerInspections?.filter(b => b.status === 'FAIL')?.length || 0);
 
-      // Calculate compliance score (simplified)
-      const complianceScore = Math.max(0, 100 - (totalViolations * 10));
+      // Calculate compliance score (more sophisticated)
+      let complianceScore = 100;
+      complianceScore -= (totalViolations * 5); // -5 points per violation
+      complianceScore -= (equipmentIssues * 10); // -10 points per equipment failure
+      complianceScore -= (complaints311?.length || 0) * 2; // -2 points per 311 complaint
+      complianceScore = Math.max(0, complianceScore);
+
       const riskLevel = complianceScore > 80 ? 'LOW' : complianceScore > 60 ? 'MEDIUM' : 'HIGH';
 
       const { error } = await supabase
@@ -238,14 +453,14 @@ class AutomatedDataSyncService {
           open_violations: openViolations,
           dob_violations: dobViolations?.length || 0,
           hpd_violations: hpdViolations?.length || 0,
-          equipment_issues: 0,
-          open_311_complaints: 0,
+          equipment_issues: equipmentIssues,
+          open_311_complaints: complaints311?.length || 0,
           fire_safety_issues: 0,
           last_analyzed_at: new Date().toISOString()
         });
 
       if (error) throw error;
-      console.log(`✅ Created compliance summary: ${complianceScore}% compliance, ${totalViolations} violations`);
+      console.log(`✅ Created compliance summary: ${complianceScore}% compliance, ${totalViolations} violations, ${equipmentIssues} equipment issues`);
     } catch (error) {
       console.error('❌ Error creating compliance summary:', error);
     }
