@@ -4,7 +4,7 @@ Propply AI - Intelligent Compliance Management Platform
 Modern Flask web application for property compliance management
 """
 
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import json
 import os
@@ -59,9 +59,9 @@ def get_client(city='NYC'):
         print(f"Error initializing {city} client: {e}")
         return None
 
-@app.route('/')
-def dashboard():
-    """Main dashboard - API info"""
+@app.route('/api/info')
+def api_info():
+    """API info endpoint"""
     return jsonify({
         'message': 'Propply AI MVP API',
         'version': '2.0',
@@ -75,35 +75,13 @@ def dashboard():
         'documentation': 'See README_MVP.md for complete API documentation'
     })
 
-@app.route('/portfolio')
-def portfolio():
-    """Property portfolio visualization"""
-    return render_template('propply/portfolio.html')
-
-@app.route('/compliance')
-def compliance():
-    """Compliance management interface"""
-    return render_template('propply/compliance.html')
-
-@app.route('/marketplace')
-def marketplace():
-    """Service marketplace"""
-    return render_template('propply/marketplace.html')
-
-@app.route('/analytics')
-def analytics():
-    """Analytics and insights"""
-    return render_template('propply/analytics.html')
-
-@app.route('/settings')
-def settings():
-    """User settings and preferences"""
-    return render_template('propply/settings.html')
-
-@app.route('/add-property')
-def add_property():
-    """Render the enhanced 4-step property addition form"""
-    return render_template('propply/add_property_4step.html')
+# Old template routes - now handled by React app
+# @app.route('/portfolio')
+# @app.route('/compliance')
+# @app.route('/marketplace')
+# @app.route('/analytics')
+# @app.route('/settings')
+# @app.route('/add-property')
 
 @app.route('/add_property', methods=['POST'])
 def add_property_post():
@@ -981,9 +959,11 @@ def stripe_webhook():
         print(f"Webhook error: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.errorhandler(404)
-def not_found(error):
-    return render_template('propply/404.html'), 404
+# Serve static files from build folder
+@app.route('/static/<path:path>')
+def serve_static(path):
+    """Serve static assets from build/static directory"""
+    return send_from_directory('build/static', path)
 
 # Serve React app for all non-API routes
 @app.route('/', defaults={'path': ''})
@@ -994,14 +974,35 @@ def serve_react_app(path):
     if path.startswith('api/'):
         return jsonify({'error': 'API endpoint not found'}), 404
     
+    # Check if the path is a static file request
+    if path and '.' in path.split('/')[-1]:
+        try:
+            return send_from_directory('build', path)
+        except FileNotFoundError:
+            pass
+    
+    # Otherwise serve the React app
     try:
         return send_file('build/index.html')
     except FileNotFoundError:
         return jsonify({'error': 'React app not built. Please run npm run build first.'}), 500
 
+@app.errorhandler(404)
+def not_found(error):
+    """Handle 404 errors"""
+    # For API routes, return JSON error
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'API endpoint not found'}), 404
+    # For other routes, serve React app (let React handle routing)
+    try:
+        return send_file('build/index.html')
+    except FileNotFoundError:
+        return jsonify({'error': 'Application not found'}), 404
+
 @app.errorhandler(500)
 def internal_error(error):
-    return render_template('propply/500.html'), 500
+    """Handle 500 errors"""
+    return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
     # For development

@@ -10,7 +10,7 @@ services:
       apt-get install -y nodejs
       npm ci --legacy-peer-deps
       npm run build
-    startCommand: python propply_app.py
+    startCommand: gunicorn propply_app:app --bind 0.0.0.0:$PORT --workers 4 --timeout 120
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
