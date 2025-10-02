@@ -291,12 +291,6 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                   alt="Propply AI" 
                   className="h-12 w-auto"
                 />
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                    {APP_CONFIG.name}
-                  </h1>
-                  <p className="text-gray-600 text-sm font-medium">Property Compliance Management</p>
-                </div>
               </div>
             </div>
             <div className="flex items-center space-x-3">
