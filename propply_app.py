@@ -499,61 +499,6 @@ def api_sync_nyc_property():
         logger.error(f"NYC sync error: {e}", exc_info=True)
         return jsonify({'error': f'NYC sync failed: {str(e)}'}), 500
 
-@app.route('/api/sync-nyc-property', methods=['POST'])
-def api_sync_nyc_property():
-    """
-    Sync NYC Open Data to Supabase for a specific property
-    
-    Flow: Frontend → This endpoint → NYC APIs → Supabase storage
-    
-    Request body:
-    {
-        "property_id": "uuid",
-        "address": "666 Broadway, New York, NY 10012",
-        "bin": "1001620" (optional),
-        "bbl": "1001620001" (optional)
-    }
-    """
-    try:
-        if not nyc_sync_service:
-            return jsonify({'error': 'NYC Sync Service not available. Check Supabase configuration.'}), 500
-        
-        data = request.get_json()
-        property_id = data.get('property_id')
-        address = data.get('address')
-        bin_number = data.get('bin')
-        bbl = data.get('bbl')
-        
-        if not property_id or not address:
-            return jsonify({'error': 'property_id and address are required'}), 400
-        
-        logger.info(f"🗽 Starting NYC sync for property {property_id}: {address}")
-        
-        # Run sync
-        result = nyc_sync_service.sync_property_data(
-            property_id=property_id,
-            address=address,
-            bin_number=bin_number,
-            bbl=bbl
-        )
-        
-        if result.get('success'):
-            return jsonify({
-                'success': True,
-                'message': 'NYC data synced successfully',
-                'data': result
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'NYC sync completed with errors',
-                'data': result
-            }), 500
-        
-    except Exception as e:
-        logger.error(f"NYC sync error: {e}", exc_info=True)
-        return jsonify({'error': f'NYC sync failed: {str(e)}'}), 500
-
 @app.route('/api/nyc-property-data/<property_id>', methods=['GET'])
 def api_get_nyc_property_data(property_id):
     """
