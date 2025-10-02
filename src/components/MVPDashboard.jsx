@@ -278,8 +278,8 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-gold-500/5 to-ruby-500/5 rounded-full blur-3xl animate-float"></div>
       </div>
       
-      {/* Enterprise Header */}
-      <header className="relative glass-effect border-b border-primary shadow-enterprise">
+      {/* Bright Enterprise Header */}
+      <header className="relative glass-effect border-b border-bright shadow-bright">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -298,22 +298,22 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <button className="relative p-3 rounded-xl glass-effect-light hover:bg-secondary transition-all duration-300 group">
+              <button className="relative p-3 rounded-xl glass-effect-light hover:bg-accent transition-all duration-300 group">
                 <Bell className="h-5 w-5 text-tertiary group-hover:text-accent transition-colors" />
-                <span className="absolute -top-1 -right-1 h-5 w-5 bg-gradient-to-r from-ruby-500 to-ruby-600 rounded-full text-xs text-white flex items-center justify-center font-bold shadow-enterprise animate-pulse">
+                <span className="absolute -top-1 -right-1 h-5 w-5 bg-gradient-to-r from-ruby-500 to-ruby-600 rounded-full text-xs text-white flex items-center justify-center font-bold shadow-bright animate-pulse">
                   3
                 </span>
               </button>
               <button 
                 onClick={toggleTheme}
-                className="p-3 rounded-xl glass-effect-light hover:bg-secondary transition-all duration-300 group"
+                className="p-3 rounded-xl glass-effect-light hover:bg-accent transition-all duration-300 group"
                 title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
                 {isDark ? <Sun className="h-5 w-5 text-tertiary group-hover:text-warning transition-colors" /> : <Moon className="h-5 w-5 text-tertiary group-hover:text-accent transition-colors" />}
               </button>
               <button 
                 onClick={() => setActiveTab('profile')}
-                className="p-3 rounded-xl glass-effect-light hover:bg-secondary transition-all duration-300 group"
+                className="p-3 rounded-xl glass-effect-light hover:bg-accent transition-all duration-300 group"
                 title="Settings"
               >
                 <Settings className="h-5 w-5 text-tertiary group-hover:text-accent transition-colors" />
@@ -334,7 +334,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
               </button>
               <button
                 onClick={onLogout}
-                className="text-tertiary hover:text-error transition-colors font-medium px-3 py-2 rounded-lg hover:bg-secondary"
+                className="text-tertiary hover:text-error transition-colors font-medium px-3 py-2 rounded-lg hover:bg-accent"
               >
                 Logout
               </button>
