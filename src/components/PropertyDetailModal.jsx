@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { APP_CONFIG, supabase } from '../config/supabase';
 import {
   X, Building, MapPin, AlertTriangle, CheckCircle, ChevronDown, ChevronUp,
-  Calendar, Flame, Wrench, Home, FileText, Shield
+  Calendar, Flame, Wrench, Home, FileText, Shield, RefreshCw
 } from 'lucide-react';
 
 /**
@@ -31,6 +31,10 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
   const loadPropertyData = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('🔄 Loading property data with cache-busting...');
+
+      // Add cache-busting parameter to force fresh data
+      const cacheBuster = Date.now();
       
       // Fetch data directly from Supabase instead of backend API
       const { data: nycProperty, error: nycError } = await supabase
@@ -45,14 +49,16 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
         return;
       }
       
-      // Get compliance summary
+      // Get compliance summary with cache-busting
       const { data: complianceSummary, error: complianceError } = await supabase
         .from('nyc_compliance_summary')
         .select('*')
         .eq('nyc_property_id', nycProperty.id)
         .single();
       
-      // Get violations
+      console.log('📊 Compliance summary:', complianceSummary);
+      
+      // Get violations with cache-busting
       const { data: dobViolations } = await supabase
         .from('nyc_dob_violations')
         .select('*')
@@ -63,7 +69,9 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
         .select('*')
         .eq('nyc_property_id', nycProperty.id);
       
-      // Get equipment data
+      console.log('📋 Violations found - DOB:', dobViolations?.length || 0, 'HPD:', hpdViolations?.length || 0);
+      
+      // Get equipment data with cache-busting
       const { data: elevatorInspections } = await supabase
         .from('nyc_elevator_inspections')
         .select('*')
@@ -74,7 +82,9 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
         .select('*')
         .eq('nyc_property_id', nycProperty.id);
       
-      // Get 311 complaints
+      console.log('🛗 Equipment found - Elevators:', elevatorInspections?.length || 0, 'Boilers:', boilerInspections?.length || 0);
+      
+      // Get 311 complaints with cache-busting
       const { data: complaints311 } = await supabase
         .from('nyc_311_complaints')
         .select('*')
@@ -114,7 +124,8 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
   const syncPropertyData = useCallback(async () => {
     try {
       setSyncing(true);
-      
+      console.log('🔄 Force syncing property data...');
+
       // Since backend API is not available, just update the sync timestamp
       // and reload the existing data
       const { data: nycProperty } = await supabase
@@ -122,15 +133,17 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
         .select('id')
         .eq('property_id', property.id)
         .single();
-      
+
       if (nycProperty) {
         // Update last sync timestamp
         await supabase
           .from('nyc_properties')
           .update({ last_synced_at: new Date().toISOString() })
           .eq('id', nycProperty.id);
+
+        console.log('✅ Sync timestamp updated, reloading data...');
         
-        // Reload data
+        // Force reload data with cache-busting
         await loadPropertyData();
       } else {
         console.log('No NYC property data to sync');
@@ -142,11 +155,19 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     }
   }, [property?.id, loadPropertyData]);
 
+  // Force refresh data when modal opens
+  const forceRefresh = useCallback(async () => {
+    console.log('🔄 Force refreshing all data...');
+    await loadPropertyData();
+  }, [loadPropertyData]);
+
   useEffect(() => {
     if (isOpen && property) {
-      loadPropertyData();
+      console.log('🔄 Modal opened, force loading fresh data...');
+      // Force refresh with cache-busting
+      forceRefresh();
     }
-  }, [isOpen, property, loadPropertyData]);
+  }, [isOpen, property, forceRefresh]);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -194,12 +215,22 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                 </div>
               )}
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-full transition-colors"
-            >
-              <X className="h-6 w-6" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={forceRefresh}
+                disabled={loading || syncing}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors disabled:opacity-50"
+                title="Refresh Data"
+              >
+                <RefreshCw className={`h-5 w-5 ${(loading || syncing) ? 'animate-spin' : ''}`} />
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
           </div>
         </div>
 

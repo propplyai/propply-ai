@@ -86,9 +86,12 @@ class NYCDataSyncTrigger:
             
             # Store violations
             if 'violations' in comprehensive_data:
+                logger.info(f"🔍 Found violations data: {comprehensive_data['violations']}")
                 violations_result = self._store_violations(nyc_property['id'], comprehensive_data['violations'])
                 results['data_sources']['violations'] = violations_result
                 logger.info(f"📋 Violations stored: DOB={violations_result.get('dob_count', 0)}, HPD={violations_result.get('hpd_count', 0)}")
+            else:
+                logger.warning("⚠️ No violations data found in comprehensive_data")
             
             # Store equipment inspections
             if 'elevator_inspections' in comprehensive_data:
@@ -171,15 +174,20 @@ class NYCDataSyncTrigger:
             # Store DOB violations
             if 'dob_violations' in violations_data and violations_data['dob_violations'] is not None:
                 dob_violations = violations_data['dob_violations']
+                logger.info(f"🔍 DOB violations data type: {type(dob_violations)}")
+                logger.info(f"🔍 DOB violations length: {len(dob_violations) if hasattr(dob_violations, '__len__') else 'N/A'}")
+                
                 if hasattr(dob_violations, 'to_dict'):  # DataFrame
                     dob_violations = dob_violations.to_dict('records')
+                    logger.info(f"🔍 Converted to records: {len(dob_violations)} violations")
                 
-                if dob_violations:
+                if dob_violations and len(dob_violations) > 0:
                     violation_records = []
-                    for violation in dob_violations:
+                    for i, violation in enumerate(dob_violations[:5]):  # Limit to first 5 for debugging
+                        logger.info(f"🔍 Violation {i+1}: {violation}")
                         violation_records.append({
                             'nyc_property_id': nyc_property_id,
-                            'violation_id': violation.get('violation_number', f"DOB-{datetime.now().timestamp()}"),
+                            'violation_id': violation.get('isn_dob_bis_viol', f"DOB-{datetime.now().timestamp()}-{i}"),
                             'bin': violation.get('bin'),
                             'bbl': violation.get('bbl'),
                             'issue_date': violation.get('issue_date'),
@@ -196,9 +204,14 @@ class NYCDataSyncTrigger:
                         })
                     
                     if violation_records:
+                        logger.info(f"🔍 Attempting to store {len(violation_records)} DOB violations...")
                         self.supabase.table('nyc_dob_violations').insert(violation_records).execute()
                         results['dob_count'] = len(violation_records)
                         logger.info(f"✅ Stored {len(violation_records)} DOB violations")
+                    else:
+                        logger.warning("⚠️ No violation records created from DOB data")
+                else:
+                    logger.warning("⚠️ No DOB violations found or empty data")
             
             # Store HPD violations
             if 'hpd_violations' in violations_data and violations_data['hpd_violations'] is not None:
