@@ -12,6 +12,7 @@ import ReportLibrary from './ReportLibrary';
 import TodoGenerator from './TodoGenerator';
 import UserProfile from './UserProfile';
 import PropertyDetailModal from './PropertyDetailModal';
+import { automatedSyncService } from '../services/AutomatedDataSyncService';
 
 const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -211,7 +212,23 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
       if (error) throw error;
 
       if (data && data[0]) {
-        setProperties(prev => [data[0], ...prev]);
+        const newProperty = data[0];
+        setProperties(prev => [newProperty, ...prev]);
+        
+        // 🚀 AUTOMATION: Trigger automatic data sync
+        console.log('🔄 Triggering automatic data sync for new property...');
+        automatedSyncService.autoSyncProperty(newProperty)
+          .then(result => {
+            console.log('✅ Automatic data sync completed:', result);
+            // Optionally refresh the properties list to show updated data
+            fetchProperties();
+          })
+          .catch(error => {
+            console.warn('⚠️ Automatic data sync failed (will retry in background):', error);
+            // Queue for background retry
+            automatedSyncService.queueSync(newProperty);
+          });
+        
         setNewProperty({
           address: '',
           city: 'NYC',
