@@ -3,6 +3,7 @@ import {
   Building, Calendar, DollarSign, CheckCircle, AlertTriangle, 
   Clock, Shield, FileText, ArrowRight, ArrowLeft, X, Info
 } from 'lucide-react';
+import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 
 // Compliance systems mapping - matches your database structure
 const COMPLIANCE_SYSTEMS = {
@@ -115,6 +116,8 @@ const EnhancedPropertyForm = ({ isOpen, onClose, onSubmit, supabase }) => {
   const [availableComplianceSystems, setAvailableComplianceSystems] = useState([]);
   const [totalAnnualCost, setTotalAnnualCost] = useState({ min: 0, max: 0 });
   const [loading, setLoading] = useState(false);
+  const [addressError, setAddressError] = useState(null);
+  const [addressComponents, setAddressComponents] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -195,6 +198,33 @@ const EnhancedPropertyForm = ({ isOpen, onClose, onSubmit, supabase }) => {
         [field]: value
       }));
     }
+  };
+
+  // Handle Google Places address selection
+  const handleAddressSelect = (placeData) => {
+    setAddressError(null);
+    setAddressComponents(placeData.components);
+    
+    // Check for validation errors
+    if (placeData.validation && !placeData.validation.isValid) {
+      setAddressError(placeData.validation.errors.join(', '));
+      return;
+    }
+    
+    // Check for warnings (like unsupported cities)
+    if (placeData.validation && placeData.validation.warnings && placeData.validation.warnings.length > 0) {
+      console.warn('Address warnings:', placeData.validation.warnings);
+      // You could show warnings to the user if needed
+    }
+  };
+
+  // Handle address input changes
+  const handleAddressChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      address: value
+    }));
+    setAddressError(null);
   };
 
   const toggleComplianceSystem = (systemKey) => {
@@ -296,7 +326,7 @@ const EnhancedPropertyForm = ({ isOpen, onClose, onSubmit, supabase }) => {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return formData.address && formData.units && formData.type;
+        return formData.address && formData.units && formData.type && !addressError;
       case 2:
         return true; // Property details are optional
       case 3:
@@ -367,12 +397,14 @@ const EnhancedPropertyForm = ({ isOpen, onClose, onSubmit, supabase }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Property Address *
                   </label>
-                  <input
-                    type="text"
+                  <GooglePlacesAutocomplete
                     value={formData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={handleAddressChange}
+                    onPlaceSelect={handleAddressSelect}
                     placeholder="123 Main Street, New York, NY 10001"
+                    className="w-full"
+                    required={true}
+                    error={addressError}
                   />
                 </div>
 

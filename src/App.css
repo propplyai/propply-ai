@@ -11,33 +11,73 @@
 
 /* CSS Variables for Theme Support */
 :root {
-  /* Light Theme Variables */
+  /* Professional Light Theme Variables */
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-tertiary: #f1f5f9;
   --bg-card: #ffffff;
   --bg-sidebar: #1e293b;
   --bg-header: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.8);
+  --bg-glass-hover: rgba(255, 255, 255, 0.9);
   
   --text-primary: #0f172a;
-  --text-secondary: #475569;
+  --text-secondary: #334155;
   --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
   --text-inverse: #f8fafc;
+  --text-accent: #1e40af;
+  --text-success: #059669;
+  --text-warning: #d97706;
+  --text-error: #dc2626;
   
   --border-primary: #e2e8f0;
   --border-secondary: #cbd5e1;
   --border-accent: #3b82f6;
+  --border-focus: #2563eb;
+  --border-success: #10b981;
+  --border-warning: #f59e0b;
+  --border-error: #ef4444;
   
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-enterprise: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-enterprise: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.15);
   
   --corporate-500: #3b82f6;
   --corporate-600: #2563eb;
+  --corporate-700: #1d4ed8;
+  --corporate-50: #eff6ff;
+  --corporate-100: #dbeafe;
+  --corporate-900: #1e3a8a;
+  
   --gold-500: #f59e0b;
+  --gold-600: #d97706;
+  --gold-50: #fffbeb;
+  --gold-100: #fef3c7;
+  
   --emerald-500: #10b981;
+  --emerald-600: #059669;
+  --emerald-50: #ecfdf5;
+  --emerald-100: #d1fae5;
+  
   --ruby-500: #ef4444;
+  --ruby-600: #dc2626;
+  --ruby-50: #fef2f2;
+  --ruby-100: #fee2e2;
+  
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
 }
 
 [data-theme="dark"] {
@@ -68,6 +108,149 @@
   --gold-500: #f59e0b;
   --emerald-500: #10b981;
   --ruby-500: #ef4444;
+}
+
+/* Professional Light Mode Styling */
+.theme-light {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.theme-light .glass-effect {
+  background: var(--bg-glass) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--border-primary) !important;
+}
+
+.theme-light .glass-effect-light {
+  background: var(--bg-glass-hover) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid var(--border-primary) !important;
+}
+
+.theme-light .enterprise-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-primary) !important;
+  box-shadow: var(--shadow-enterprise) !important;
+}
+
+.theme-light .text-primary {
+  color: var(--text-primary) !important;
+}
+
+.theme-light .text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.theme-light .text-tertiary {
+  color: var(--text-tertiary) !important;
+}
+
+.theme-light .text-muted {
+  color: var(--text-muted) !important;
+}
+
+.theme-light .text-accent {
+  color: var(--text-accent) !important;
+}
+
+.theme-light .text-success {
+  color: var(--text-success) !important;
+}
+
+.theme-light .text-warning {
+  color: var(--text-warning) !important;
+}
+
+.theme-light .text-error {
+  color: var(--text-error) !important;
+}
+
+.theme-light .bg-primary {
+  background-color: var(--bg-primary) !important;
+}
+
+.theme-light .bg-secondary {
+  background-color: var(--bg-secondary) !important;
+}
+
+.theme-light .bg-card {
+  background-color: var(--bg-card) !important;
+}
+
+.theme-light .border-primary {
+  border-color: var(--border-primary) !important;
+}
+
+.theme-light .border-secondary {
+  border-color: var(--border-secondary) !important;
+}
+
+.theme-light .shadow-enterprise {
+  box-shadow: var(--shadow-enterprise) !important;
+}
+
+.theme-light .shadow-glow {
+  box-shadow: var(--shadow-glow) !important;
+}
+
+/* Ensure all headings are visible in light mode */
+.theme-light h1,
+.theme-light h2,
+.theme-light h3,
+.theme-light h4,
+.theme-light h5,
+.theme-light h6 {
+  color: var(--text-primary) !important;
+}
+
+/* Ensure all paragraphs and text are visible */
+.theme-light p,
+.theme-light span,
+.theme-light div {
+  color: var(--text-secondary) !important;
+}
+
+/* Ensure form elements are visible */
+.theme-light input,
+.theme-light textarea,
+.theme-light select {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.theme-light input:focus,
+.theme-light textarea:focus,
+.theme-light select:focus {
+  border-color: var(--border-focus) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Button styling for light mode */
+.theme-light .btn-primary {
+  background: linear-gradient(135deg, var(--corporate-500), var(--corporate-600)) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.theme-light .btn-primary:hover {
+  background: linear-gradient(135deg, var(--corporate-600), var(--corporate-700)) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.theme-light .btn-secondary {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-primary) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.theme-light .btn-secondary:hover {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-secondary) !important;
+  box-shadow: var(--shadow-md) !important;
 }
 
 body {

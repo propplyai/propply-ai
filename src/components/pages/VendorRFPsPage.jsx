@@ -212,22 +212,22 @@ const VendorRFPsPage = ({ user, properties }) => {
       <div className="enterprise-card overflow-hidden">
         <div className="enterprise-card-header">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between">
-            <h2 className="text-xl font-bold text-slate-100 mb-4 lg:mb-0">Certified Vendors</h2>
+            <h2 className="text-xl font-bold text-primary mb-4 lg:mb-0">Certified Vendors</h2>
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-tertiary" />
                 <input
                   type="text"
                   placeholder="Search vendors..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 pr-4 py-3 bg-slate-800 border border-slate-600 rounded-xl focus:ring-2 focus:ring-corporate-500 focus:border-corporate-500 transition-all duration-300 text-slate-200 placeholder-slate-400 hover:bg-slate-700"
+                  className="pl-12 pr-4 py-3 bg-card border border-primary rounded-xl focus:ring-2 focus:ring-corporate-500 focus:border-corporate-500 transition-all duration-300 text-primary placeholder-tertiary hover:bg-secondary"
                 />
               </div>
               <select
                 value={filterService}
                 onChange={(e) => setFilterService(e.target.value)}
-                className="px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl focus:ring-2 focus:ring-corporate-500 focus:border-corporate-500 transition-all duration-300 text-slate-200 hover:bg-slate-700"
+                className="px-4 py-3 bg-card border border-primary rounded-xl focus:ring-2 focus:ring-corporate-500 focus:border-corporate-500 transition-all duration-300 text-primary hover:bg-secondary"
               >
                 <option value="all">All Services</option>
                 <option value="comprehensive_inspection">Comprehensive Inspection</option>

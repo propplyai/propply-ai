@@ -6,6 +6,7 @@ import {
   Sparkles, MapPin, X, Menu, FileText, Sun, Moon,
   ChevronDown, MoreVertical, Award, User
 } from 'lucide-react';
+import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 import CompliancePunchListPage from './pages/CompliancePunchListPage';
 import VendorRFPsPage from './pages/VendorRFPsPage';
 import ReportLibraryPage from './pages/ReportLibraryPage';
@@ -278,7 +279,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
       </div>
       
       {/* Enterprise Header */}
-      <header className="relative glass-effect border-b border-slate-700/50 shadow-enterprise">
+      <header className="relative glass-effect border-b border-primary shadow-enterprise">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -294,32 +295,28 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                   alt="Propply AI" 
                   className="h-12 w-auto filter brightness-0 invert"
                 />
-                <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold text-slate-100">Propply AI</h1>
-                  <p className="text-sm text-slate-400">Enterprise Dashboard</p>
-                </div>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <button className="relative p-3 rounded-xl glass-effect-light hover:bg-slate-700/50 transition-all duration-300 group">
-                <Bell className="h-5 w-5 text-slate-400 group-hover:text-corporate-400 transition-colors" />
+              <button className="relative p-3 rounded-xl glass-effect-light hover:bg-secondary transition-all duration-300 group">
+                <Bell className="h-5 w-5 text-tertiary group-hover:text-accent transition-colors" />
                 <span className="absolute -top-1 -right-1 h-5 w-5 bg-gradient-to-r from-ruby-500 to-ruby-600 rounded-full text-xs text-white flex items-center justify-center font-bold shadow-enterprise animate-pulse">
                   3
                 </span>
               </button>
               <button 
                 onClick={toggleTheme}
-                className="p-3 rounded-xl glass-effect-light hover:bg-slate-700/50 transition-all duration-300 group"
+                className="p-3 rounded-xl glass-effect-light hover:bg-secondary transition-all duration-300 group"
                 title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
-                {isDark ? <Sun className="h-5 w-5 text-slate-400 group-hover:text-gold-400 transition-colors" /> : <Moon className="h-5 w-5 text-slate-400 group-hover:text-corporate-400 transition-colors" />}
+                {isDark ? <Sun className="h-5 w-5 text-tertiary group-hover:text-warning transition-colors" /> : <Moon className="h-5 w-5 text-tertiary group-hover:text-accent transition-colors" />}
               </button>
               <button 
                 onClick={() => setActiveTab('profile')}
-                className="p-3 rounded-xl glass-effect-light hover:bg-slate-700/50 transition-all duration-300 group"
+                className="p-3 rounded-xl glass-effect-light hover:bg-secondary transition-all duration-300 group"
                 title="Settings"
               >
-                <Settings className="h-5 w-5 text-slate-400 group-hover:text-corporate-400 transition-colors" />
+                <Settings className="h-5 w-5 text-tertiary group-hover:text-accent transition-colors" />
               </button>
               <button
                 onClick={() => setActiveTab('profile')}
@@ -337,7 +334,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
               </button>
               <button
                 onClick={onLogout}
-                className="text-slate-400 hover:text-ruby-400 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-slate-800/50"
+                className="text-tertiary hover:text-error transition-colors font-medium px-3 py-2 rounded-lg hover:bg-secondary"
               >
                 Logout
               </button>
@@ -699,17 +696,21 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                   <MapPin className="h-4 w-4 text-corporate-400" />
                   <span>Property Address *</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="123 Main Street, New York, NY 10001"
+                <GooglePlacesAutocomplete
                   value={newProperty.address}
-                  onChange={(e) => {
-                    setNewProperty({...newProperty, address: e.target.value});
+                  onChange={(value) => {
+                    setNewProperty({...newProperty, address: value});
                     setPropertyDataFetched(false); // Reset if user changes address
                   }}
-                  className="w-full px-4 py-4 bg-slate-800 border border-slate-600 rounded-2xl focus:ring-2 focus:ring-corporate-500 focus:border-corporate-500 transition-all duration-300 text-slate-200 placeholder-slate-400 hover:bg-slate-700"
-                  required
+                  onPlaceSelect={(placeData) => {
+                    // Handle address selection and validation
+                    console.log('Selected address:', placeData);
+                  }}
+                  placeholder="123 Main Street, New York, NY 10001"
+                  className="w-full"
                   disabled={fetchingPropertyData || loading}
+                  required={true}
+                  darkMode={true}
                 />
               </div>
 
