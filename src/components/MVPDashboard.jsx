@@ -195,20 +195,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
         const newProperty = data[0];
         setProperties(prev => [newProperty, ...prev]);
         
-        // 🚀 AUTOMATION: Trigger automatic data sync
-        console.log('🔄 Triggering automatic data sync for new property...');
-        automatedSyncService.autoSyncProperty(newProperty)
-          .then(result => {
-            console.log('✅ Automatic data sync completed:', result);
-            // Optionally refresh the properties list to show updated data
-            fetchProperties();
-          })
-          .catch(error => {
-            console.warn('⚠️ Automatic data sync failed (will retry in background):', error);
-            // Queue for background retry
-            automatedSyncService.queueSync(newProperty);
-          });
-        
+        // Reset form and close modal immediately
         setNewProperty({
           address: '',
           city: 'NYC',
@@ -220,6 +207,23 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
         });
         setPropertyDataFetched(false);
         setShowAddForm(false);
+        
+        // 🚀 AUTOMATION: Trigger automatic data sync in background (non-blocking)
+        console.log('🔄 Triggering automatic data sync for new property...');
+        // Use setTimeout to make this non-blocking
+        setTimeout(() => {
+          automatedSyncService.autoSyncProperty(newProperty)
+            .then(result => {
+              console.log('✅ Automatic data sync completed:', result);
+              // Optionally refresh the properties list to show updated data
+              fetchProperties();
+            })
+            .catch(error => {
+              console.warn('⚠️ Automatic data sync failed (will retry in background):', error);
+              // Queue for background retry
+              automatedSyncService.queueSync(newProperty);
+            });
+        }, 100);
       }
     } catch (error) {
       console.error('Error adding property:', error);

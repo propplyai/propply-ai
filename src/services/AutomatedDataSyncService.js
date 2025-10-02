@@ -19,16 +19,29 @@ class AutomatedDataSyncService {
     console.log(`🔄 Auto-syncing data for property: ${property.address}`);
     
     try {
-      if (property.city === 'NYC') {
-        await this.syncNYCProperty(property);
-      } else if (property.city === 'Philadelphia') {
-        await this.syncPhiladelphiaProperty(property);
-      } else {
-        console.log(`⚠️ Unknown city "${property.city}" - skipping auto-sync`);
-      }
+      // Add timeout to prevent hanging
+      const syncPromise = this.performSync(property);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Sync timeout after 10 seconds')), 10000)
+      );
+      
+      await Promise.race([syncPromise, timeoutPromise]);
     } catch (error) {
       console.error('❌ Auto-sync failed:', error);
       // Don't throw - this shouldn't break property creation
+    }
+  }
+
+  /**
+   * Perform the actual sync operation
+   */
+  async performSync(property) {
+    if (property.city === 'NYC') {
+      await this.syncNYCProperty(property);
+    } else if (property.city === 'Philadelphia') {
+      await this.syncPhiladelphiaProperty(property);
+    } else {
+      console.log(`⚠️ Unknown city "${property.city}" - skipping auto-sync`);
     }
   }
 
@@ -41,25 +54,50 @@ class AutomatedDataSyncService {
     try {
       // First, create basic NYC property record
       const nycProperty = await this.createBasicNYCProperty(property);
+      console.log('✅ Basic NYC property record created:', nycProperty.id);
       
-      // Then try to fetch real NYC data using direct API calls
-      console.log('🔄 Fetching real NYC compliance data...');
-      await this.fetchNYCComplianceData(property, nycProperty);
+      // Then trigger comprehensive data sync to database
+      console.log('🔄 Triggering comprehensive NYC data sync to database...');
+      const syncResult = await this.fetchNYCComplianceData(property, nycProperty);
       
-      console.log('✅ NYC data sync completed');
-      return {
-        success: true,
-        message: 'NYC compliance data synced successfully',
-        data: nycProperty
-      };
+      if (syncResult && syncResult.success) {
+        console.log('✅ NYC data sync completed successfully');
+        console.log('📊 Sync summary:', {
+          violations: syncResult.data?.data_sources?.violations || 'No data',
+          elevators: syncResult.data?.data_sources?.elevator_inspections || 'No data',
+          boilers: syncResult.data?.data_sources?.boiler_inspections || 'No data',
+          complaints: syncResult.data?.data_sources?.complaints || 'No data'
+        });
+        
+        return {
+          success: true,
+          message: 'NYC compliance data synced successfully to database',
+          data: {
+            nycProperty,
+            syncResult
+          }
+        };
+      } else {
+        console.warn('⚠️ NYC sync completed with warnings, but basic record created');
+        return {
+          success: true,
+          message: 'Basic NYC property record created, detailed sync had issues',
+          data: nycProperty
+        };
+      }
       
     } catch (error) {
       console.error('❌ NYC sync failed:', error);
       // Still create basic record even if detailed sync fails
       try {
-        await this.createBasicNYCProperty(property);
-        return { success: true, message: 'Basic NYC property record created' };
+        const basicRecord = await this.createBasicNYCProperty(property);
+        return { 
+          success: true, 
+          message: 'Basic NYC property record created (detailed sync failed)',
+          data: basicRecord
+        };
       } catch (fallbackError) {
+        console.error('❌ Failed to create even basic NYC record:', fallbackError);
         throw error;
       }
     }
@@ -95,16 +133,17 @@ class AutomatedDataSyncService {
    */
   async fetchNYCComplianceData(property, nycProperty) {
     try {
-      console.log('🔍 Fetching comprehensive NYC data...');
+      console.log('🔍 Triggering comprehensive NYC data sync...');
       
-      // Use the backend API to get comprehensive data
+      // Use the backend API to sync comprehensive data to database
       const apiUrl = APP_CONFIG.apiUrl || window.location.origin;
-      const response = await fetch(`${apiUrl}/api/nyc-comprehensive-data`, {
+      const response = await fetch(`${apiUrl}/api/sync-nyc-property`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          property_id: property.id,
           address: property.address,
           bin: property.bin_number,
           bbl: property.opa_account
@@ -113,18 +152,18 @@ class AutomatedDataSyncService {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Comprehensive NYC data fetched successfully');
+        console.log('✅ NYC data sync completed successfully');
+        console.log('📊 Sync results:', data);
         
-        // Store all the data
-        await this.storeComprehensiveNYCData(nycProperty.id, data);
+        return data;
         
       } else {
-        console.warn('⚠️ Backend API not available, using direct API calls...');
+        console.warn('⚠️ Backend sync API not available, using direct API calls...');
         await this.fetchNYCDataDirectly(property, nycProperty);
       }
       
     } catch (error) {
-      console.error('❌ Error fetching NYC compliance data:', error);
+      console.error('❌ Error syncing NYC compliance data:', error);
       // Fallback to direct API calls
       await this.fetchNYCDataDirectly(property, nycProperty);
     }
