@@ -3,6 +3,7 @@ import { supabase } from './config/supabase';
 import { authService } from './services/auth';
 import LandingPage from './components/LandingPage';
 import MVPDashboard from './components/MVPDashboard';
+import { ThemeProvider } from './contexts/ThemeContext';
 // Debug components removed for production
 import './App.css';
 
@@ -354,13 +355,15 @@ function App() {
   }
 
   return (
-    <div className="App">
-      {user ? (
-        <MVPDashboard user={user} onLogout={handleLogout} initialTab={initialTab} />
-      ) : (
-        <LandingPage onLogin={handleLogin} />
-      )}
-    </div>
+    <ThemeProvider>
+      <div className="App">
+        {user ? (
+          <MVPDashboard user={user} onLogout={handleLogout} initialTab={initialTab} />
+        ) : (
+          <LandingPage onLogin={handleLogin} />
+        )}
+      </div>
+    </ThemeProvider>
   );
 }
 

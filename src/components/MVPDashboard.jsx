@@ -3,18 +3,20 @@ import { supabase, APP_CONFIG } from '../config/supabase';
 import {
   Building, Users, BarChart3, Calendar, Plus, Search, Eye,
   ArrowUpDown, CheckCircle, AlertTriangle, AlertCircle, Bell, Settings,
-  Sparkles, MapPin, X, Menu, FileText,
+  Sparkles, MapPin, X, Menu, FileText, Sun, Moon,
   ChevronDown, MoreVertical, Award, User
 } from 'lucide-react';
-import CompliancePunchList from './CompliancePunchList';
-import VendorRFP from './VendorRFP';
-import ReportLibrary from './ReportLibrary';
-import TodoGenerator from './TodoGenerator';
+import CompliancePunchListPage from './pages/CompliancePunchListPage';
+import VendorRFPsPage from './pages/VendorRFPsPage';
+import ReportLibraryPage from './pages/ReportLibraryPage';
+import TodoGeneratorPage from './pages/TodoGeneratorPage';
 import UserProfile from './UserProfile';
 import PropertyDetailModal from './PropertyDetailModal';
 import { automatedSyncService } from '../services/AutomatedDataSyncService';
+import { useTheme } from '../contexts/ThemeContext';
 
-const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
+const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
+  const { theme, toggleTheme, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [properties, setProperties] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
@@ -258,16 +260,16 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
   };
 
   const navigationTabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, gradient: 'from-blue-500 to-cyan-500' },
-    { id: 'profile', label: 'My Profile', icon: User, gradient: 'from-pink-500 to-rose-500' },
-    { id: 'compliance', label: 'Compliance Punch List', icon: CheckCircle, gradient: 'from-green-500 to-emerald-500' },
-    { id: 'vendors', label: 'Vendor RFPs', icon: Users, gradient: 'from-purple-500 to-pink-500' },
-    { id: 'reports', label: 'Report Library', icon: FileText, gradient: 'from-orange-500 to-red-500' },
-    { id: 'todos', label: 'To-Do Generator', icon: Calendar, gradient: 'from-indigo-500 to-purple-500' }
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, gradient: 'from-corporate-500 to-corporate-600' },
+    { id: 'compliance', label: 'Compliance Punch List', icon: CheckCircle, gradient: 'from-emerald-500 to-emerald-600' },
+    { id: 'vendors', label: 'Vendor RFPs', icon: Users, gradient: 'from-gold-500 to-gold-600' },
+    { id: 'reports', label: 'Report Library', icon: FileText, gradient: 'from-purple-500 to-purple-600' },
+    { id: 'todos', label: 'To-Do Generator', icon: Calendar, gradient: 'from-indigo-500 to-indigo-600' },
+    { id: 'profile', label: 'My Profile', icon: User, gradient: 'from-slate-500 to-slate-600' }
   ];
 
   return (
-    <div className="min-h-screen bg-navy-900 relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
       {/* Enterprise Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-corporate-500/10 to-gold-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
@@ -306,6 +308,13 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                 </span>
               </button>
               <button 
+                onClick={toggleTheme}
+                className="p-3 rounded-xl glass-effect-light hover:bg-slate-700/50 transition-all duration-300 group"
+                title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {isDark ? <Sun className="h-5 w-5 text-slate-400 group-hover:text-gold-400 transition-colors" /> : <Moon className="h-5 w-5 text-slate-400 group-hover:text-corporate-400 transition-colors" />}
+              </button>
+              <button 
                 onClick={() => setActiveTab('profile')}
                 className="p-3 rounded-xl glass-effect-light hover:bg-slate-700/50 transition-all duration-300 group"
                 title="Settings"
@@ -338,8 +347,8 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
       </header>
 
       <div className="flex">
-        {/* Enterprise Dark Sidebar */}
-        <nav className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 bg-navy-900 border-r border-slate-700/50 shadow-enterprise transition-all duration-500 ease-out sidebar-mobile`}>
+        {/* Enterprise Sidebar */}
+        <nav className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 border-r shadow-enterprise transition-all duration-500 ease-out sidebar-mobile`} style={{ backgroundColor: 'var(--bg-sidebar)', borderColor: 'var(--border-primary)' }}>
           <div className="flex flex-col h-full pt-20 lg:pt-8">
             <div className="px-6 pb-6">
               <div className="enterprise-card p-4">
@@ -430,7 +439,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 relative bg-slate-900">
+        <main className="flex-1 relative" style={{ backgroundColor: 'var(--bg-secondary)' }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 main-content-mobile">
             {/* Dashboard Tab */}
             {activeTab === 'dashboard' && (
@@ -443,7 +452,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                         <h2 className="text-3xl font-bold gradient-text mb-2">
                           Welcome back, {userProfile?.full_name || 'User'}! 👋
                         </h2>
-                        <p className="text-slate-400 text-lg">Here's your property compliance overview for today</p>
+                        <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>Here's your property compliance overview for today</p>
                       </div>
                       <div className="flex items-center space-x-3">
                         <button 
@@ -657,11 +666,11 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
             )}
 
             {/* Other Tabs */}
+            {activeTab === 'compliance' && <CompliancePunchListPage user={user} properties={properties} />}
+            {activeTab === 'vendors' && <VendorRFPsPage user={user} properties={properties} />}
+            {activeTab === 'reports' && <ReportLibraryPage user={user} properties={properties} />}
+            {activeTab === 'todos' && <TodoGeneratorPage user={user} properties={properties} />}
             {activeTab === 'profile' && <UserProfile user={user} onProfileUpdate={fetchUserProfile} />}
-            {activeTab === 'compliance' && <CompliancePunchList user={user} properties={properties} />}
-            {activeTab === 'vendors' && <VendorRFP user={user} properties={properties} />}
-            {activeTab === 'reports' && <ReportLibrary user={user} properties={properties} />}
-            {activeTab === 'todos' && <TodoGenerator user={user} properties={properties} />}
           </div>
         </main>
       </div>
