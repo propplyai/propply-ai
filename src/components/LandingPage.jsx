@@ -144,7 +144,7 @@ const LandingPage = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-indigo-200">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         {/* Background Decorations */}
@@ -190,11 +190,11 @@ const LandingPage = ({ onLogin }) => {
               <span className="text-sm font-semibold text-gray-700">AI-Powered Property Compliance</span>
             </div>
             
-            <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent leading-tight">
+            <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent leading-tight drop-shadow-lg" style={{textShadow: '0 2px 4px rgba(0,0,0,0.1)'}}>
               Property Compliance<br />Made Simple
             </h1>
             
-            <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-800 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
               Automate inspections, track violations, and stay compliant with AI-powered insights for NYC & Philadelphia properties.
             </p>
             

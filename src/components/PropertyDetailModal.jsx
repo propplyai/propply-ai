@@ -45,6 +45,8 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
       
       if (nycError || !nycProperty) {
         console.log('No NYC property data found, trying to sync...');
+        console.log('NYC Error:', nycError);
+        console.log('Property ID:', property.id);
         await syncPropertyData();
         return;
       }
@@ -57,6 +59,12 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
         .single();
       
       console.log('📊 Compliance summary:', complianceSummary);
+      
+      if (complianceError || !complianceSummary) {
+        console.log('No compliance summary found:', complianceError);
+        console.log('NYC Property ID:', nycProperty.id);
+        // Don't return here, continue to load other data
+      }
       
       // Get violations with cache-busting
       const { data: dobViolations } = await supabase
@@ -103,7 +111,17 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
           bbl: nycProperty.bbl,
           last_synced_at: nycProperty.last_synced_at
         },
-        compliance_summary: complianceSummary,
+        compliance_summary: complianceSummary || {
+          compliance_score: 0,
+          risk_level: 'UNKNOWN',
+          total_violations: 0,
+          open_violations: 0,
+          dob_violations: 0,
+          hpd_violations: 0,
+          equipment_issues: 0,
+          open_311_complaints: 0,
+          fire_safety_issues: 0
+        },
         violations: {
           dob: dobViolations || [],
           hpd: hpdViolations || []
@@ -120,6 +138,36 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
       
     } catch (error) {
       console.error('Error loading property data:', error);
+      // Set minimal data structure even on error to avoid "No Data Available"
+      setData({
+        property: {
+          id: property.id,
+          address: property.address,
+          bin: null,
+          bbl: null,
+          last_synced_at: null
+        },
+        compliance_summary: {
+          compliance_score: 0,
+          risk_level: 'UNKNOWN',
+          total_violations: 0,
+          open_violations: 0,
+          dob_violations: 0,
+          hpd_violations: 0,
+          equipment_issues: 0,
+          open_311_complaints: 0,
+          fire_safety_issues: 0
+        },
+        violations: {
+          dob: [],
+          hpd: []
+        },
+        equipment: {
+          elevators: [],
+          boilers: []
+        },
+        complaints_311: []
+      });
     } finally {
       setLoading(false);
     }
