@@ -158,12 +158,11 @@ const LandingPage = ({ onLogin }) => {
         <nav className="relative z-10 container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
-                <Building className="h-7 w-7 text-white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                Propply AI
-              </span>
+              <img 
+                src="/propply-logo-transparent.png" 
+                alt="Propply AI" 
+                className="h-12 w-auto"
+              />
             </div>
             
             <div className="flex items-center space-x-4">

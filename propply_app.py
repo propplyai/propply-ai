@@ -502,7 +502,7 @@ def api_sync_nyc_property():
 @app.route('/api/nyc-comprehensive-data', methods=['POST'])
 def api_nyc_comprehensive_data():
     """
-    Get comprehensive NYC data using the existing NYC Open Data client
+    Get comprehensive NYC data using the enhanced compliance system
     
     Request body:
     {
@@ -512,7 +512,7 @@ def api_nyc_comprehensive_data():
     }
     """
     try:
-        from nyc_opendata_client import NYCOpenDataClient
+        from nyc_data_sync_service import NYCDataSyncService
         
         data = request.get_json()
         address = data.get('address')
@@ -524,21 +524,36 @@ def api_nyc_comprehensive_data():
 
         logger.info(f"🗽 Fetching comprehensive NYC data for: {address}")
 
-        # Initialize NYC Open Data client
-        client = NYCOpenDataClient()
+        # Initialize enhanced NYC data sync service
+        sync_service = NYCDataSyncService()
         
-        # Get comprehensive property data
-        result = client.get_comprehensive_property_data(
+        # Create a temporary property ID for this request
+        import uuid
+        temp_property_id = str(uuid.uuid4())
+        
+        # Sync the property data using enhanced system
+        result = sync_service.sync_property_data(
+            property_id=temp_property_id,
             address=address,
             bin_number=bin_number,
             bbl=bbl
         )
-
-        return jsonify({
-            'success': True,
-            'message': 'Comprehensive NYC data fetched successfully',
-            'data': result
-        })
+        
+        if result.get('success'):
+            # Get the comprehensive data
+            compliance_data = sync_service.get_property_compliance_data(temp_property_id)
+            
+            # Add enhanced identifiers to response
+            if 'identifiers' in result:
+                compliance_data['enhanced_identifiers'] = result['identifiers']
+            
+            return jsonify({
+                'success': True,
+                'message': 'Enhanced NYC compliance data fetched successfully',
+                'data': compliance_data
+            })
+        else:
+            return jsonify({'error': 'Failed to sync property data', 'details': result.get('errors')}), 500
 
     except Exception as e:
         logger.error(f"NYC comprehensive data error: {e}", exc_info=True)

@@ -286,12 +286,11 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                 {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
               <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur opacity-75"></div>
-                  <div className="relative p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl">
-                    <Building className="h-8 w-8 text-white" />
-                  </div>
-                </div>
+                <img 
+                  src="/propply-logo-transparent.png" 
+                  alt="Propply AI" 
+                  className="h-12 w-auto"
+                />
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
                     {APP_CONFIG.name}
