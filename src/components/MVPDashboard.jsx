@@ -428,38 +428,38 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
 
         {/* Main Content */}
         <main className="flex-1 relative">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             {/* Dashboard Tab */}
             {activeTab === 'dashboard' && (
-              <div className="space-y-8">
+              <div className="space-y-4">
                 {/* Welcome Section */}
                 <div className="relative">
-                  <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl">
+                  <div className="bg-white/60 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-lg">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between">
-                      <div className="mb-6 lg:mb-0">
-                        <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-2">
+                      <div className="mb-3 lg:mb-0">
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-1">
                           Welcome back, {userProfile?.full_name || 'User'}! 👋
                         </h2>
-                        <p className="text-gray-600 text-lg">Here's what's happening with your properties today</p>
+                        <p className="text-gray-600">Here's what's happening with your properties today</p>
                       </div>
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-3">
                         <button 
                           onClick={() => setShowAddForm(!showAddForm)}
-                          className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg transform hover:scale-105"
+                          className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-md"
                         >
-                          <Plus className="h-5 w-5" />
-                          <span className="font-medium">Add Property</span>
+                          <Plus className="h-4 w-4" />
+                          <span className="font-medium text-sm">Add Property</span>
                         </button>
-                        <button className="p-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl hover:bg-white/90 transition-all duration-300 group">
-                          <MoreVertical className="h-5 w-5 text-gray-600 group-hover:text-gray-800" />
+                        <button className="p-2 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl hover:bg-white/90 transition-all duration-300 group">
+                          <MoreVertical className="h-4 w-4 text-gray-600 group-hover:text-gray-800" />
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Premium Stats Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Compact Stats Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
                     { 
                       label: 'Total Properties', 
@@ -488,22 +488,18 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                   ].map((stat, index) => {
                     const Icon = stat.icon;
                     return (
-                      <div key={index} className="group relative">
-                        <div className="absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-10 rounded-3xl transition-opacity duration-300"></div>
-                        <div className="relative bg-white/70 backdrop-blur-xl p-6 rounded-3xl border border-white/20 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2">
-                          <div className="flex items-center justify-between mb-6">
-                            <div className="relative">
-                              <div className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} rounded-2xl blur opacity-75`}></div>
-                              <div className={`relative p-4 bg-gradient-to-r ${stat.gradient} rounded-2xl`}>
-                                <Icon className="h-6 w-6 text-white" />
-                              </div>
+                      <div key={index} className="bg-white/70 backdrop-blur-xl p-3 rounded-xl border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-2 bg-gradient-to-r ${stat.gradient} rounded-lg`}>
+                              <Icon className="h-4 w-4 text-white" />
                             </div>
-                          </div>
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                            <p className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                              {stat.value}
-                            </p>
+                            <div>
+                              <p className="text-xs font-medium text-gray-600">{stat.label}</p>
+                              <p className="text-2xl font-bold text-gray-900">
+                                {stat.value}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -512,44 +508,44 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                 </div>
 
                 {/* Properties Section */}
-                <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
-                  <div className="p-8 border-b border-white/10">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg overflow-hidden">
+                  <div className="p-4 border-b border-white/10">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                       <div>
-                        <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+                        <h2 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-1">
                           Your Properties
                         </h2>
-                        <p className="text-gray-600 text-lg">Manage and monitor your property compliance in real-time</p>
+                        <p className="text-gray-600 text-sm">Manage and monitor your property compliance in real-time</p>
                       </div>
-                      <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex flex-col sm:flex-row gap-3">
                         <div className="relative">
                           <select
                             value={filterType}
                             onChange={(e) => setFilterType(e.target.value)}
-                            className="appearance-none bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl px-6 py-3 pr-12 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 font-medium"
+                            className="appearance-none bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-2 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 font-medium text-sm"
                           >
                             <option value="all">All Property Types</option>
                             <option value="Residential">Residential</option>
                             <option value="Commercial">Commercial</option>
                             <option value="Mixed Use">Mixed Use</option>
                           </select>
-                          <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" />
+                          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Search */}
-                  <div className="p-6 border-b border-white/10 bg-gradient-to-r from-blue-50/50 to-purple-50/50">
-                    <div className="flex flex-col lg:flex-row gap-4">
+                  <div className="p-3 border-b border-white/10 bg-gradient-to-r from-blue-50/50 to-purple-50/50">
+                    <div className="flex flex-col lg:flex-row gap-3">
                       <div className="flex-1 relative">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                           type="text"
                           placeholder="Search properties by address, type, or status..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                          className="w-full pl-10 pr-4 py-2 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-sm"
                         />
                       </div>
                     </div>
@@ -560,42 +556,42 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                     <table className="w-full">
                       <thead className="bg-gray-50/80 backdrop-blur-sm">
                         <tr>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100/50" onClick={() => handleSort('address')}>
-                            <div className="flex items-center space-x-2">
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100/50" onClick={() => handleSort('address')}>
+                            <div className="flex items-center space-x-1">
                               <span>Property Address</span>
-                              <ArrowUpDown className="h-4 w-4 text-gray-400" />
+                              <ArrowUpDown className="h-3 w-3 text-gray-400" />
                             </div>
                           </th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">City</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Compliance</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Violations</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">City</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Type</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Compliance</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Violations</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200/50">
                         {filteredAndSortedProperties().map((property) => (
                           <tr key={property.id} className="hover:bg-white/50 transition-colors duration-200">
-                            <td className="px-6 py-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
-                                  <Building className="h-4 w-4 text-white" />
+                            <td className="px-4 py-2">
+                              <div className="flex items-center space-x-2">
+                                <div className="p-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-md">
+                                  <Building className="h-3 w-3 text-white" />
                                 </div>
                                 <div>
-                                  <div className="font-medium text-gray-900">{property.address}</div>
-                                  <div className="text-sm text-gray-500">ID: {property.id}</div>
+                                  <div className="font-medium text-gray-900 text-sm">{property.address}</div>
+                                  <div className="text-xs text-gray-500">ID: {property.id}</div>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                            <td className="px-4 py-2">
+                              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                                 property.city === 'NYC' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                               }`}>
                                 {property.city}
                               </span>
                             </td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                            <td className="px-4 py-2">
+                              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                                 property.property_type === 'Residential' ? 'bg-green-100 text-green-800' :
                                 property.property_type === 'Commercial' ? 'bg-blue-100 text-blue-800' :
                                 'bg-purple-100 text-purple-800'
@@ -603,28 +599,28 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                                 {property.property_type}
                               </span>
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                                <span className="font-medium">85%</span>
+                            <td className="px-4 py-2">
+                              <div className="flex items-center space-x-1">
+                                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                <span className="font-medium text-sm">85%</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                            <td className="px-4 py-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
                                 0 violations
                               </span>
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center space-x-2">
+                            <td className="px-4 py-2">
+                              <div className="flex items-center space-x-1">
                                 <button
                                   onClick={() => {
                                     setSelectedProperty(property);
                                     fetchPropertyDetails(property);
                                   }}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  className="p-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                                   title="View Details"
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-3 w-3" />
                                 </button>
                               </div>
                             </td>
