@@ -351,7 +351,7 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                     <div className="text-left">
                       <h4 className="font-bold text-gray-900">Elevator Equipment</h4>
                       <p className="text-sm text-gray-600">
-                        {data.elevators?.length || 0} total, {data.elevators?.filter(e => e.device_status === 'ACTIVE').length || 0} active
+                        {data.equipment?.elevators?.length || 0} total, {data.equipment?.elevators?.filter(e => e.device_status === 'ACTIVE').length || 0} active
                       </p>
                     </div>
                   </div>
@@ -367,18 +367,18 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-gray-600">TOTAL DEVICES:</span>
-                          <span className="ml-2 font-bold text-gray-900">{data.elevators?.length || 0}</span>
+                          <span className="ml-2 font-bold text-gray-900">{data.equipment?.elevators?.length || 0}</span>
                         </div>
                         <div>
                           <span className="text-gray-600">RECENT INSPECTIONS:</span>
                           <span className="ml-2 font-bold text-gray-900">
-                            {data.elevators?.filter(e => e.last_inspection_date).length || 0}
+                            {data.equipment?.elevators?.filter(e => e.last_inspection_date).length || 0}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {data.elevators && data.elevators.length > 0 ? (
+                    {data.equipment?.elevators && data.equipment.elevators.length > 0 ? (
                       <div className="space-y-3">
                         <div className="grid grid-cols-4 gap-4 px-4 py-2 bg-white rounded-lg font-semibold text-sm text-gray-700">
                           <div>Device ID & Count</div>
@@ -386,7 +386,7 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                           <div>Status</div>
                           <div>Defects</div>
                         </div>
-                        {data.elevators.slice(0, 10).map((elevator, idx) => (
+                        {data.equipment.elevators.slice(0, 10).map((elevator, idx) => (
                           <div key={idx} className="grid grid-cols-4 gap-4 px-4 py-3 bg-white rounded-lg hover:bg-blue-50 transition-colors">
                             <div>
                               <div className="font-bold text-gray-900">{elevator.device_number}</div>
@@ -427,7 +427,7 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                     <div className="text-left">
                       <h4 className="font-bold text-gray-900">Boiler Equipment</h4>
                       <p className="text-sm text-gray-600">
-                        {data.boilers?.length || 0} total, {data.boilers?.filter(b => b.status === 'ACTIVE').length || 0} active
+                        {data.equipment?.boilers?.length || 0} total, {data.equipment?.boilers?.filter(b => b.status === 'ACTIVE').length || 0} active
                       </p>
                     </div>
                   </div>
@@ -443,18 +443,18 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-gray-600">TOTAL DEVICES:</span>
-                          <span className="ml-2 font-bold text-gray-900">{data.boilers?.length || 0}</span>
+                          <span className="ml-2 font-bold text-gray-900">{data.equipment?.boilers?.length || 0}</span>
                         </div>
                         <div>
                           <span className="text-gray-600">RECENT INSPECTIONS:</span>
                           <span className="ml-2 font-bold text-gray-900">
-                            {data.boilers?.filter(b => b.inspection_date).length || 0}
+                            {data.equipment?.boilers?.filter(b => b.inspection_date).length || 0}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {data.boilers && data.boilers.length > 0 ? (
+                    {data.equipment?.boilers && data.equipment.boilers.length > 0 ? (
                       <div className="space-y-3">
                         <div className="grid grid-cols-4 gap-4 px-4 py-2 bg-white rounded-lg font-semibold text-sm text-gray-700">
                           <div>Device ID</div>
@@ -462,7 +462,7 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                           <div>Status</div>
                           <div>Defects</div>
                         </div>
-                        {data.boilers.slice(0, 10).map((boiler, idx) => (
+                        {data.equipment.boilers.slice(0, 10).map((boiler, idx) => (
                           <div key={idx} className="grid grid-cols-4 gap-4 px-4 py-3 bg-white rounded-lg hover:bg-orange-50 transition-colors">
                             <div className="font-bold text-gray-900">{boiler.device_number}</div>
                             <div className="text-gray-700">{boiler.inspection_date || 'N/A'}</div>
@@ -500,7 +500,7 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                     <div className="text-left">
                       <h4 className="font-bold text-gray-900">DOB Violations</h4>
                       <p className="text-sm text-gray-600">
-                        {data.dob_violations?.length || 0} total, {data.dob_violations?.filter(v => v.violation_status === 'ACTIVE').length || 0} active
+                        {data.violations?.dob?.length || 0} total, {data.violations?.dob?.filter(v => v.violation_status === 'ACTIVE').length || 0} active
                       </p>
                     </div>
                   </div>
@@ -512,9 +512,9 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
 
                 {expandedSections.dobViolations && (
                   <div className="bg-gray-50 p-6 border-t-2 border-gray-200">
-                    {data.dob_violations && data.dob_violations.length > 0 ? (
+                    {data.violations?.dob && data.violations.dob.length > 0 ? (
                       <div className="space-y-3">
-                        {data.dob_violations.slice(0, 10).map((violation, idx) => (
+                        {data.violations.dob.slice(0, 10).map((violation, idx) => (
                           <div key={idx} className="bg-white p-4 rounded-lg border border-red-100">
                             <div className="flex items-start justify-between mb-2">
                               <div>
@@ -557,7 +557,7 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                     <div className="text-left">
                       <h4 className="font-bold text-gray-900">HPD Violations</h4>
                       <p className="text-sm text-gray-600">
-                        {data.hpd_violations?.length || 0} total, {data.hpd_violations?.filter(v => v.violation_status === 'OPEN').length || 0} open
+                        {data.violations?.hpd?.length || 0} total, {data.violations?.hpd?.filter(v => v.violation_status === 'OPEN').length || 0} open
                       </p>
                     </div>
                   </div>
@@ -569,9 +569,9 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
 
                 {expandedSections.hpdViolations && (
                   <div className="bg-gray-50 p-6 border-t-2 border-gray-200">
-                    {data.hpd_violations && data.hpd_violations.length > 0 ? (
+                    {data.violations?.hpd && data.violations.hpd.length > 0 ? (
                       <div className="space-y-3">
-                        {data.hpd_violations.slice(0, 10).map((violation, idx) => (
+                        {data.violations.hpd.slice(0, 10).map((violation, idx) => (
                           <div key={idx} className="bg-white p-4 rounded-lg border border-purple-100">
                             <div className="flex items-start justify-between mb-2">
                               <span className={`px-2 py-1 rounded text-xs font-medium ${
