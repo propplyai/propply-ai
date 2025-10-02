@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { authService } from '../services/auth';
 import {
-  Building, Shield, Zap, Eye, EyeOff, X, CheckCircle, ArrowRight, Sparkles
+  Building, Shield, Zap, Eye, EyeOff, X, CheckCircle, ArrowRight, Sparkles,
+  TrendingUp, Users, FileText, Clock, AlertTriangle, Target, Star, ChevronRight
 } from 'lucide-react';
 
 const LandingPage = ({ onLogin }) => {
@@ -144,111 +145,225 @@ const LandingPage = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-indigo-200">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        {/* Background Decorations */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-20 right-20 w-32 h-32 bg-yellow-400 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-glow"></div>
+        <div className="absolute bottom-20 left-20 w-24 h-24 bg-cyan-400 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-glow animation-delay-1000"></div>
+        <div className="absolute top-1/3 left-1/4 w-16 h-16 bg-emerald-400 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-float"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-20 h-20 bg-rose-400 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-float animation-delay-2000"></div>
+      </div>
 
-        {/* Navbar */}
-        <nav className="relative z-10 container mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <img 
-                src="/propply-logo-transparent.png" 
-                alt="Propply AI" 
-                className="h-12 w-auto"
-              />
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => openAuthModal('signin')}
-                className="px-6 py-2.5 text-gray-700 hover:text-gray-900 font-medium transition-colors"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => openAuthModal('signup')}
-                className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg transform hover:scale-105 font-medium"
-              >
-                Get Started
-              </button>
-            </div>
+      {/* Navigation */}
+      <nav className="relative z-10 container mx-auto px-6 py-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <img 
+              src="/propply-logo-transparent.png" 
+              alt="Propply AI" 
+              className="h-12 w-auto"
+            />
+            <span className="text-2xl font-bold text-white">Propply</span>
           </div>
-        </nav>
+          
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => openAuthModal('signin')}
+              className="px-6 py-3 text-white hover:text-purple-200 font-medium transition-all duration-300 hover:scale-105"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => openAuthModal('signup')}
+              className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg transform hover:scale-105 font-medium"
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+      </nav>
 
-        {/* Hero Content */}
-        <div className="relative z-10 container mx-auto px-6 pt-20 pb-32">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full mb-8 border border-white/20 shadow-lg">
-              <Sparkles className="h-5 w-5 text-blue-600" />
-              <span className="text-sm font-semibold text-gray-700">AI-Powered Property Compliance</span>
+      {/* Hero Section */}
+      <div className="relative z-10 container mx-auto px-6 pt-16 pb-24">
+        <div className="max-w-6xl mx-auto text-center">
+          <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full mb-8 border border-white/20 shadow-lg">
+            <Sparkles className="h-5 w-5 text-yellow-300" />
+            <span className="text-sm font-semibold text-white">AI-Powered Property Compliance</span>
+          </div>
+          
+          <h1 className="text-7xl md:text-8xl font-bold mb-8 text-white leading-tight">
+            Property Compliance<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300">
+              Made Simple
+            </span>
+          </h1>
+          
+          <p className="text-2xl text-gray-200 mb-12 max-w-3xl mx-auto leading-relaxed font-medium">
+            Automate inspections, track violations, and stay compliant with AI-powered insights for NYC & Philadelphia properties.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16">
+            <button
+              onClick={() => openAuthModal('signup')}
+              className="group px-10 py-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-2xl transform hover:scale-105 font-semibold text-xl flex items-center space-x-3"
+            >
+              <span>Start Free Trial</span>
+              <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
+            </button>
+            
+            <button
+              onClick={() => openAuthModal('signin')}
+              className="px-10 py-5 bg-white/10 backdrop-blur-sm text-white rounded-2xl hover:bg-white/20 transition-all duration-300 shadow-lg border border-white/30 font-semibold text-xl"
+            >
+              Sign In
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-white mb-2">10K+</div>
+              <div className="text-gray-300">Properties Managed</div>
             </div>
-            
-            <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent leading-tight drop-shadow-lg" style={{textShadow: '0 2px 4px rgba(0,0,0,0.1)'}}>
-              Property Compliance<br />Made Simple
-            </h1>
-            
-            <p className="text-xl text-gray-800 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
-              Automate inspections, track violations, and stay compliant with AI-powered insights for NYC & Philadelphia properties.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button
-                onClick={() => openAuthModal('signup')}
-                className="group px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-2xl transform hover:scale-105 font-medium text-lg flex items-center space-x-3"
-              >
-                <span>Start Free Trial</span>
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              
-              <button
-                onClick={() => openAuthModal('signin')}
-                className="px-8 py-4 bg-white/80 backdrop-blur-sm text-gray-700 rounded-2xl hover:bg-white transition-all duration-300 shadow-lg border border-white/20 font-medium text-lg"
-              >
-                Sign In
-              </button>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-white mb-2">99.9%</div>
+              <div className="text-gray-300">Compliance Rate</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-white mb-2">24/7</div>
+              <div className="text-gray-300">AI Monitoring</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Features Section */}
-      <div className="relative z-10 container mx-auto px-6 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6">
+      <div className="relative z-10 container mx-auto px-6 py-24">
+        <div className="text-center mb-16">
+          <h2 className="text-5xl font-bold text-white mb-6">Powerful Features</h2>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Everything you need to manage property compliance with AI-powered insights and automation.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {/* Feature Card 1 */}
+          <div className="group bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 hover:scale-105">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
               <Shield className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Smart Compliance</h3>
-            <p className="text-gray-600 leading-relaxed">
-              AI-powered compliance tracking for NYC & Philadelphia properties with automated violation detection.
+            <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-blue-300 transition-colors">Smart Compliance</h3>
+            <p className="text-gray-300 leading-relaxed group-hover:text-white transition-colors">
+              AI-powered compliance tracking for NYC & Philadelphia properties with automated violation detection and real-time alerts.
             </p>
+            <div className="mt-6 flex items-center text-blue-300 font-medium group-hover:text-blue-200 transition-colors">
+              <span>Learn more</span>
+              <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </div>
           </div>
 
-          <div className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
+          {/* Feature Card 2 */}
+          <div className="group bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 hover:scale-105">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
               <Zap className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Instant Reports</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Generate comprehensive compliance reports in seconds with actionable insights and recommendations.
+            <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-purple-300 transition-colors">Instant Reports</h3>
+            <p className="text-gray-300 leading-relaxed group-hover:text-white transition-colors">
+              Generate comprehensive compliance reports in seconds with actionable insights, recommendations, and automated scheduling.
             </p>
+            <div className="mt-6 flex items-center text-purple-300 font-medium group-hover:text-purple-200 transition-colors">
+              <span>Learn more</span>
+              <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </div>
           </div>
 
-          <div className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-            <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6">
+          {/* Feature Card 3 */}
+          <div className="group bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 hover:scale-105">
+            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
               <CheckCircle className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Stay Compliant</h3>
-            <p className="text-gray-600 leading-relaxed">
-              Never miss a deadline with automated scheduling, reminders, and vendor marketplace integration.
+            <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-green-300 transition-colors">Stay Compliant</h3>
+            <p className="text-gray-300 leading-relaxed group-hover:text-white transition-colors">
+              Never miss a deadline with automated scheduling, reminders, and vendor marketplace integration for seamless compliance.
             </p>
+            <div className="mt-6 flex items-center text-green-300 font-medium group-hover:text-green-200 transition-colors">
+              <span>Learn more</span>
+              <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Feature Card 4 */}
+          <div className="group bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 hover:scale-105">
+            <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+              <TrendingUp className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-orange-300 transition-colors">Analytics Dashboard</h3>
+            <p className="text-gray-300 leading-relaxed group-hover:text-white transition-colors">
+              Track performance metrics, identify trends, and optimize your property management with comprehensive analytics.
+            </p>
+            <div className="mt-6 flex items-center text-orange-300 font-medium group-hover:text-orange-200 transition-colors">
+              <span>Learn more</span>
+              <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Feature Card 5 */}
+          <div className="group bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 hover:scale-105">
+            <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+              <Users className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-indigo-300 transition-colors">Team Collaboration</h3>
+            <p className="text-gray-300 leading-relaxed group-hover:text-white transition-colors">
+              Collaborate with your team, assign tasks, and track progress with role-based permissions and real-time updates.
+            </p>
+            <div className="mt-6 flex items-center text-indigo-300 font-medium group-hover:text-indigo-200 transition-colors">
+              <span>Learn more</span>
+              <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Feature Card 6 */}
+          <div className="group bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 hover:scale-105">
+            <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+              <Target className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-pink-300 transition-colors">Smart Alerts</h3>
+            <p className="text-gray-300 leading-relaxed group-hover:text-white transition-colors">
+              Get intelligent notifications about potential violations, upcoming deadlines, and compliance opportunities.
+            </p>
+            <div className="mt-6 flex items-center text-pink-300 font-medium group-hover:text-pink-200 transition-colors">
+              <span>Learn more</span>
+              <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="relative z-10 container mx-auto px-6 py-24">
+        <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 backdrop-blur-xl rounded-3xl p-16 text-center border border-white/20 shadow-2xl">
+          <h2 className="text-5xl font-bold text-white mb-6">Ready to Get Started?</h2>
+          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
+            Join thousands of property managers who trust Propply for their compliance needs.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <button
+              onClick={() => openAuthModal('signup')}
+              className="group px-12 py-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-2xl transform hover:scale-105 font-semibold text-xl flex items-center space-x-3"
+            >
+              <span>Start Your Free Trial</span>
+              <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
+            </button>
+            
+            <button
+              onClick={() => openAuthModal('signin')}
+              className="px-12 py-5 bg-white/10 backdrop-blur-sm text-white rounded-2xl hover:bg-white/20 transition-all duration-300 shadow-lg border border-white/30 font-semibold text-xl"
+            >
+              Sign In to Dashboard
+            </button>
           </div>
         </div>
       </div>
@@ -402,14 +517,34 @@ const LandingPage = ({ onLogin }) => {
           33% { transform: translate(30px, -50px) scale(1.1); }
           66% { transform: translate(-20px, 20px) scale(0.9); }
         }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        @keyframes glow {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.6; }
+        }
         .animate-blob {
           animation: blob 7s infinite;
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        .animate-glow {
+          animation: glow 2s ease-in-out infinite;
+        }
+        .animation-delay-1000 {
+          animation-delay: 1s;
         }
         .animation-delay-2000 {
           animation-delay: 2s;
         }
         .animation-delay-4000 {
           animation-delay: 4s;
+        }
+        .animation-delay-6000 {
+          animation-delay: 6s;
         }
       `}</style>
     </div>
