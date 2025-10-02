@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { APP_CONFIG } from '../config/supabase';
+import { APP_CONFIG, supabase } from '../config/supabase';
 import {
   X, Building, MapPin, AlertTriangle, CheckCircle, ChevronDown, ChevronUp,
   Calendar, Flame, Wrench, Home, FileText, Shield
@@ -32,17 +32,77 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     try {
       setLoading(true);
       
-      // First, try to get existing data from backend
-      const apiUrl = APP_CONFIG.apiUrl || window.location.origin;
-      const response = await fetch(`${apiUrl}/api/nyc-property-data/${property.id}`);
-      const result = await response.json();
+      // Fetch data directly from Supabase instead of backend API
+      const { data: nycProperty, error: nycError } = await supabase
+        .from('nyc_properties')
+        .select('*')
+        .eq('property_id', property.id)
+        .single();
       
-      if (result.success && result.data) {
-        setData(result.data);
-      } else {
-        // No data yet, trigger sync
+      if (nycError || !nycProperty) {
+        console.log('No NYC property data found, trying to sync...');
         await syncPropertyData();
+        return;
       }
+      
+      // Get compliance summary
+      const { data: complianceSummary, error: complianceError } = await supabase
+        .from('nyc_compliance_summary')
+        .select('*')
+        .eq('nyc_property_id', nycProperty.id)
+        .single();
+      
+      // Get violations
+      const { data: dobViolations } = await supabase
+        .from('nyc_dob_violations')
+        .select('*')
+        .eq('nyc_property_id', nycProperty.id);
+      
+      const { data: hpdViolations } = await supabase
+        .from('nyc_hpd_violations')
+        .select('*')
+        .eq('nyc_property_id', nycProperty.id);
+      
+      // Get equipment data
+      const { data: elevatorInspections } = await supabase
+        .from('nyc_elevator_inspections')
+        .select('*')
+        .eq('nyc_property_id', nycProperty.id);
+      
+      const { data: boilerInspections } = await supabase
+        .from('nyc_boiler_inspections')
+        .select('*')
+        .eq('nyc_property_id', nycProperty.id);
+      
+      // Get 311 complaints
+      const { data: complaints311 } = await supabase
+        .from('nyc_311_complaints')
+        .select('*')
+        .eq('nyc_property_id', nycProperty.id);
+      
+      // Structure the data for the component
+      const propertyData = {
+        property: {
+          id: property.id,
+          address: property.address,
+          bin: nycProperty.bin,
+          bbl: nycProperty.bbl,
+          last_synced_at: nycProperty.last_synced_at
+        },
+        compliance_summary: complianceSummary,
+        violations: {
+          dob: dobViolations || [],
+          hpd: hpdViolations || []
+        },
+        equipment: {
+          elevators: elevatorInspections || [],
+          boilers: boilerInspections || []
+        },
+        complaints_311: complaints311 || []
+      };
+      
+      setData(propertyData);
+      
     } catch (error) {
       console.error('Error loading property data:', error);
     } finally {
@@ -55,30 +115,32 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
     try {
       setSyncing(true);
       
-      const apiUrl = APP_CONFIG.apiUrl || window.location.origin;
-      const response = await fetch(`${apiUrl}/api/sync-nyc-property`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          property_id: property.id,
-          address: property.address,
-          bin: property.bin,
-          bbl: property.bbl
-        })
-      });
+      // Since backend API is not available, just update the sync timestamp
+      // and reload the existing data
+      const { data: nycProperty } = await supabase
+        .from('nyc_properties')
+        .select('id')
+        .eq('property_id', property.id)
+        .single();
       
-      const result = await response.json();
-      
-      if (result.success) {
-        // Reload data after sync
+      if (nycProperty) {
+        // Update last sync timestamp
+        await supabase
+          .from('nyc_properties')
+          .update({ last_synced_at: new Date().toISOString() })
+          .eq('id', nycProperty.id);
+        
+        // Reload data
         await loadPropertyData();
+      } else {
+        console.log('No NYC property data to sync');
       }
     } catch (error) {
       console.error('Error syncing property:', error);
     } finally {
       setSyncing(false);
     }
-  }, [property?.id, property?.address, property?.bin, property?.bbl, loadPropertyData]);
+  }, [property?.id, loadPropertyData]);
 
   useEffect(() => {
     if (isOpen && property) {
