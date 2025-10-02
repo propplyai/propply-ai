@@ -436,7 +436,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 relative" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+        <main className="flex-1 relative bg-secondary">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 main-content-mobile">
             {/* Dashboard Tab */}
             {activeTab === 'dashboard' && (

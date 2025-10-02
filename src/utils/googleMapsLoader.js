@@ -116,3 +116,4 @@ export const validateGoogleMapsConfig = () => {
     message: 'Google Maps API key is configured correctly'
   };
 };
+
