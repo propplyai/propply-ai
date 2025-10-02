@@ -70,6 +70,8 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
         .eq('nyc_property_id', nycProperty.id);
       
       console.log('📋 Violations found - DOB:', dobViolations?.length || 0, 'HPD:', hpdViolations?.length || 0);
+      console.log('📋 DOB Violations data:', dobViolations);
+      console.log('📋 HPD Violations data:', hpdViolations);
       
       // Get equipment data with cache-busting
       const { data: elevatorInspections } = await supabase
@@ -83,6 +85,8 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
         .eq('nyc_property_id', nycProperty.id);
       
       console.log('🛗 Equipment found - Elevators:', elevatorInspections?.length || 0, 'Boilers:', boilerInspections?.length || 0);
+      console.log('🛗 Elevator data:', elevatorInspections);
+      console.log('🛗 Boiler data:', boilerInspections);
       
       // Get 311 complaints with cache-busting
       const { data: complaints311 } = await supabase
@@ -111,6 +115,7 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
         complaints_311: complaints311 || []
       };
       
+      console.log('📊 Final property data structure:', propertyData);
       setData(propertyData);
       
     } catch (error) {
@@ -353,6 +358,10 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                       <p className="text-sm text-gray-600">
                         {data.equipment?.elevators?.length || 0} total, {data.equipment?.elevators?.filter(e => e.device_status === 'ACTIVE').length || 0} active
                       </p>
+                      {/* Debug info */}
+                      <p className="text-xs text-gray-400">
+                        Debug: elevators={JSON.stringify(data.equipment?.elevators?.length)} 
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -502,6 +511,10 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                       <p className="text-sm text-gray-600">
                         {data.violations?.dob?.length || 0} total, {data.violations?.dob?.filter(v => v.violation_status === 'ACTIVE').length || 0} active
                       </p>
+                      {/* Debug info */}
+                      <p className="text-xs text-gray-400">
+                        Debug: dob={JSON.stringify(data.violations?.dob?.length)} 
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -558,6 +571,10 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
                       <h4 className="font-bold text-gray-900">HPD Violations</h4>
                       <p className="text-sm text-gray-600">
                         {data.violations?.hpd?.length || 0} total, {data.violations?.hpd?.filter(v => v.violation_status === 'OPEN').length || 0} open
+                      </p>
+                      {/* Debug info */}
+                      <p className="text-xs text-gray-400">
+                        Debug: hpd={JSON.stringify(data.violations?.hpd?.length)} 
                       </p>
                     </div>
                   </div>

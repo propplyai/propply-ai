@@ -319,18 +319,25 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      <div className="min-h-screen bg-navy-900 flex items-center justify-center relative overflow-hidden">
+        {/* Enterprise Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-corporate-500/10 to-gold-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-emerald-500/10 to-corporate-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+        </div>
+        
+        <div className="text-center relative z-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-corporate-500 to-corporate-600 rounded-2xl mb-6 shadow-enterprise animate-glow">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
           </div>
-          <p className="text-gray-600 text-lg font-medium">Loading Propply AI...</p>
+          <h1 className="text-3xl font-bold gradient-text mb-2">Propply AI</h1>
+          <p className="text-slate-400 text-lg font-medium">Loading Enterprise Dashboard...</p>
           {authError && (
-            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              <p className="text-sm">{authError}</p>
+            <div className="mt-6 p-4 bg-slate-800 border border-ruby-500/30 text-ruby-300 rounded-xl max-w-md mx-auto">
+              <p className="text-sm mb-3">{authError}</p>
               <button 
                 onClick={() => window.location.reload()} 
-                className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="btn-primary text-sm"
               >
                 Refresh Page
               </button>

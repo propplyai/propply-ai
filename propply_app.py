@@ -15,8 +15,8 @@ from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-from nyc_opendata_client import NYCOpenDataClient
-from nyc_property_finder import search_property_by_address, get_property_compliance
+from NYC_data import NYCOpenDataClient
+from complianceNYC import ComprehensivePropertyComplianceSystem
 from nyc_data_sync_service import NYCDataSyncService
 from philly_enhanced_data_client import PhillyEnhancedDataClient
 from philly_property_finder import search_property_by_address as philly_search_property, get_property_compliance as philly_get_compliance
@@ -188,27 +188,30 @@ def api_property_search():
         
         try:
             if city == 'NYC':
-                # Use NYC Property Finder
-                from nyc_property_finder_enhanced import NYCPropertyFinder
-                finder = NYCPropertyFinder()
-                results = finder.search_property_by_address(address)
+                # Use comprehensive NYC compliance system
+                compliance_system = ComprehensivePropertyComplianceSystem()
                 
-                if results and len(results) > 0:
-                    best_match = results[0]
+                # Get property identifiers using the comprehensive system
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    identifiers = loop.run_until_complete(
+                        compliance_system.get_property_identifiers(address)
+                    )
+                finally:
+                    loop.close()
+                
+                if identifiers:
                     property_data.update({
-                        'bin': best_match.get('bin'),
-                        'borough': best_match.get('borough'),
-                        'address': best_match.get('address', address)
+                        'bin': identifiers.bin,
+                        'bbl': identifiers.bbl,
+                        'borough': identifiers.borough,
+                        'block': identifiers.block,
+                        'lot': identifiers.lot,
+                        'address': identifiers.address,
+                        'zip_code': identifiers.zip_code
                     })
-                    
-                    # Try to get property details
-                    bin_number = best_match.get('bin')
-                    if bin_number:
-                        property_details = finder.get_property_compliance_analysis(bin_number)
-                        if property_details:
-                            property_data['units'] = property_details.get('property_info', {}).get('units')
-                            property_data['year_built'] = property_details.get('property_info', {}).get('year_built')
-                            property_data['type'] = property_details.get('property_info', {}).get('building_type', 'Residential')
                             
             elif city == 'Philadelphia':
                 # Use Philly Property Finder
@@ -263,7 +266,34 @@ def api_search_property():
         
         # Search for properties based on city
         if city == 'NYC':
-            matches = search_property_by_address(client, address, zip_code)
+            # Use comprehensive compliance system for NYC property search
+            compliance_system = ComprehensivePropertyComplianceSystem()
+            
+            # Get property identifiers using the comprehensive system
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                identifiers = loop.run_until_complete(
+                    compliance_system.get_property_identifiers(address)
+                )
+            finally:
+                loop.close()
+            
+            if identifiers:
+                matches = [{
+                    'address': identifiers.address,
+                    'bin': identifiers.bin,
+                    'bbl': identifiers.bbl,
+                    'borough': identifiers.borough,
+                    'block': identifiers.block,
+                    'lot': identifiers.lot,
+                    'zip_code': identifiers.zip_code,
+                    'dataset': 'NYC_Planning_GeoSearch',
+                    'strategy': 'comprehensive_search'
+                }]
+            else:
+                matches = []
         elif city == 'PHILADELPHIA':
             matches = philly_search_property(client, address)
         else:
@@ -329,9 +359,50 @@ def api_generate_compliance():
         
         # Generate compliance report based on city
         if city == 'NYC':
-            if not bin_number and not (borough and block and lot):
-                return jsonify({'error': 'Either BIN or Borough/Block/Lot is required for NYC'}), 400
-            report = get_property_compliance(client, bin_number, borough, block, lot)
+            # Use comprehensive compliance system for NYC
+            compliance_system = ComprehensivePropertyComplianceSystem()
+            
+            # Process the property using the comprehensive system
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                record = loop.run_until_complete(
+                    compliance_system.process_property(address, borough)
+                )
+            finally:
+                loop.close()
+            
+            # Convert to the expected format
+            report = {
+                'address': record.address,
+                'bin': record.bin,
+                'bbl': record.bbl,
+                'borough': record.borough,
+                'compliance_summary': {
+                    'overall_score': record.overall_compliance_score,
+                    'hpd_score': record.hpd_compliance_score,
+                    'dob_score': record.dob_compliance_score,
+                    'elevator_score': record.elevator_compliance_score,
+                    'electrical_score': record.electrical_compliance_score,
+                    'hpd_violations_total': record.hpd_violations_total,
+                    'hpd_violations_active': record.hpd_violations_active,
+                    'dob_violations_total': record.dob_violations_total,
+                    'dob_violations_active': record.dob_violations_active,
+                    'elevator_devices_total': record.elevator_devices_total,
+                    'elevator_devices_active': record.elevator_devices_active,
+                    'boiler_devices_total': record.boiler_devices_total,
+                    'electrical_permits_total': record.electrical_permits_total,
+                    'electrical_permits_active': record.electrical_permits_active
+                },
+                'hpd_violations': json.loads(record.hpd_violations_data),
+                'dob_violations': json.loads(record.dob_violations_data),
+                'elevator_inspections': json.loads(record.elevator_data),
+                'boiler_inspections': json.loads(record.boiler_data),
+                'electrical_permits': json.loads(record.electrical_data),
+                'processed_at': record.processed_at,
+                'data_sources': record.data_sources
+            }
         elif city == 'PHILADELPHIA':
             if not address:
                 return jsonify({'error': 'Address is required for Philadelphia'}), 400
@@ -387,8 +458,50 @@ def api_initiate_ai_analysis():
         
         # Get comprehensive compliance data
         if city == 'NYC':
-            # NYC implementation would go here
-            return jsonify({'error': 'NYC AI analysis not yet implemented'}), 501
+            # Use comprehensive compliance system for NYC
+            compliance_system = ComprehensivePropertyComplianceSystem()
+            
+            # Process the property using the comprehensive system
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                record = loop.run_until_complete(
+                    compliance_system.process_property(address, borough)
+                )
+            finally:
+                loop.close()
+            
+            # Convert to the expected format for AI analysis
+            compliance_data = {
+                'address': record.address,
+                'bin': record.bin,
+                'bbl': record.bbl,
+                'borough': record.borough,
+                'compliance_summary': {
+                    'overall_score': record.overall_compliance_score,
+                    'hpd_score': record.hpd_compliance_score,
+                    'dob_score': record.dob_compliance_score,
+                    'elevator_score': record.elevator_compliance_score,
+                    'electrical_score': record.electrical_compliance_score,
+                    'hpd_violations_total': record.hpd_violations_total,
+                    'hpd_violations_active': record.hpd_violations_active,
+                    'dob_violations_total': record.dob_violations_total,
+                    'dob_violations_active': record.dob_violations_active,
+                    'elevator_devices_total': record.elevator_devices_total,
+                    'elevator_devices_active': record.elevator_devices_active,
+                    'boiler_devices_total': record.boiler_devices_total,
+                    'electrical_permits_total': record.electrical_permits_total,
+                    'electrical_permits_active': record.electrical_permits_active
+                },
+                'hpd_violations': json.loads(record.hpd_violations_data),
+                'dob_violations': json.loads(record.dob_violations_data),
+                'elevator_inspections': json.loads(record.elevator_data),
+                'boiler_inspections': json.loads(record.boiler_data),
+                'electrical_permits': json.loads(record.electrical_data),
+                'processed_at': record.processed_at,
+                'data_sources': record.data_sources
+            }
         elif city == 'PHILADELPHIA':
             from philly_enhanced_data_client import PhillyEnhancedDataClient
             enhanced_client = PhillyEnhancedDataClient()
@@ -507,53 +620,70 @@ def api_nyc_comprehensive_data():
     Request body:
     {
         "address": "140 W 28th St, New York, NY 10001",
-        "bin": "1001234" (optional),
-        "bbl": "1001234001" (optional)
+        "borough": "Manhattan" (optional)
     }
     """
     try:
-        from nyc_data_sync_service import NYCDataSyncService
-        
         data = request.get_json()
         address = data.get('address')
-        bin_number = data.get('bin')
-        bbl = data.get('bbl')
+        borough = data.get('borough')
 
         if not address:
             return jsonify({'error': 'address is required'}), 400
 
-        logger.info(f"🗽 Fetching comprehensive NYC data for: {address}")
+        logger.info(f"🗽 Fetching comprehensive NYC compliance data for: {address}")
 
-        # Initialize enhanced NYC data sync service
-        sync_service = NYCDataSyncService()
+        # Initialize comprehensive compliance system
+        compliance_system = ComprehensivePropertyComplianceSystem()
         
-        # Create a temporary property ID for this request
-        import uuid
-        temp_property_id = str(uuid.uuid4())
+        # Process the property using the comprehensive system
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            record = loop.run_until_complete(
+                compliance_system.process_property(address, borough)
+            )
+        finally:
+            loop.close()
         
-        # Sync the property data using enhanced system
-        result = sync_service.sync_property_data(
-            property_id=temp_property_id,
-            address=address,
-            bin_number=bin_number,
-            bbl=bbl
-        )
+        # Convert the compliance record to a dictionary for JSON response
+        compliance_data = {
+            'address': record.address,
+            'bin': record.bin,
+            'bbl': record.bbl,
+            'borough': record.borough,
+            'block': record.block,
+            'lot': record.lot,
+            'zip_code': record.zip_code,
+            'hpd_violations_total': record.hpd_violations_total,
+            'hpd_violations_active': record.hpd_violations_active,
+            'dob_violations_total': record.dob_violations_total,
+            'dob_violations_active': record.dob_violations_active,
+            'elevator_devices_total': record.elevator_devices_total,
+            'elevator_devices_active': record.elevator_devices_active,
+            'boiler_devices_total': record.boiler_devices_total,
+            'electrical_permits_total': record.electrical_permits_total,
+            'electrical_permits_active': record.electrical_permits_active,
+            'hpd_compliance_score': record.hpd_compliance_score,
+            'dob_compliance_score': record.dob_compliance_score,
+            'elevator_compliance_score': record.elevator_compliance_score,
+            'electrical_compliance_score': record.electrical_compliance_score,
+            'overall_compliance_score': record.overall_compliance_score,
+            'hpd_violations_data': json.loads(record.hpd_violations_data),
+            'dob_violations_data': json.loads(record.dob_violations_data),
+            'elevator_data': json.loads(record.elevator_data),
+            'boiler_data': json.loads(record.boiler_data),
+            'electrical_data': json.loads(record.electrical_data),
+            'processed_at': record.processed_at,
+            'data_sources': record.data_sources
+        }
         
-        if result.get('success'):
-            # Get the comprehensive data
-            compliance_data = sync_service.get_property_compliance_data(temp_property_id)
-            
-            # Add enhanced identifiers to response
-            if 'identifiers' in result:
-                compliance_data['enhanced_identifiers'] = result['identifiers']
-            
-            return jsonify({
-                'success': True,
-                'message': 'Enhanced NYC compliance data fetched successfully',
-                'data': compliance_data
-            })
-        else:
-            return jsonify({'error': 'Failed to sync property data', 'details': result.get('errors')}), 500
+        return jsonify({
+            'success': True,
+            'message': 'Comprehensive NYC compliance data fetched successfully',
+            'data': compliance_data
+        })
 
     except Exception as e:
         logger.error(f"NYC comprehensive data error: {e}", exc_info=True)
@@ -1066,7 +1196,7 @@ def internal_error(error):
 
 if __name__ == '__main__':
     # For development
-    app.run(debug=True, host='0.0.0.0', port=5002)
+    app.run(debug=True, host='0.0.0.0', port=5001)
 else:
     # For production with Gunicorn
     application = app

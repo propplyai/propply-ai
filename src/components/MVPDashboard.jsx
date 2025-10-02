@@ -267,21 +267,22 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-      {/* Background Elements */}
+    <div className="min-h-screen bg-navy-900 relative overflow-hidden">
+      {/* Enterprise Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-cyan-600/20 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-corporate-500/10 to-gold-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-emerald-500/10 to-corporate-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-gold-500/5 to-ruby-500/5 rounded-full blur-3xl animate-float"></div>
       </div>
       
-      {/* Premium Header */}
-      <header className="relative bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-lg">
+      {/* Enterprise Header */}
+      <header className="relative glass-effect border-b border-slate-700/50 shadow-enterprise">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
+                className="lg:hidden p-3 rounded-xl bg-gradient-to-r from-corporate-500 to-corporate-600 text-white hover:from-corporate-600 hover:to-corporate-700 transition-all duration-300 shadow-enterprise hover:shadow-glow"
               >
                 {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
@@ -289,31 +290,35 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                 <img 
                   src="/propply-logo-transparent.png" 
                   alt="Propply AI" 
-                  className="h-12 w-auto"
+                  className="h-12 w-auto filter brightness-0 invert"
                 />
+                <div className="hidden sm:block">
+                  <h1 className="text-xl font-bold text-slate-100">Propply AI</h1>
+                  <p className="text-sm text-slate-400">Enterprise Dashboard</p>
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <button className="relative p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/20 hover:bg-white/80 transition-all duration-300 group">
-                <Bell className="h-5 w-5 text-gray-700 group-hover:text-blue-600 transition-colors" />
-                <span className="absolute -top-1 -right-1 h-5 w-5 bg-gradient-to-r from-red-500 to-pink-500 rounded-full text-xs text-white flex items-center justify-center font-bold shadow-lg animate-pulse">
+              <button className="relative p-3 rounded-xl glass-effect-light hover:bg-slate-700/50 transition-all duration-300 group">
+                <Bell className="h-5 w-5 text-slate-400 group-hover:text-corporate-400 transition-colors" />
+                <span className="absolute -top-1 -right-1 h-5 w-5 bg-gradient-to-r from-ruby-500 to-ruby-600 rounded-full text-xs text-white flex items-center justify-center font-bold shadow-enterprise animate-pulse">
                   3
                 </span>
               </button>
               <button 
                 onClick={() => setActiveTab('profile')}
-                className="p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/20 hover:bg-white/80 transition-all duration-300 group"
+                className="p-3 rounded-xl glass-effect-light hover:bg-slate-700/50 transition-all duration-300 group"
                 title="Settings"
               >
-                <Settings className="h-5 w-5 text-gray-700 group-hover:text-blue-600 transition-colors" />
+                <Settings className="h-5 w-5 text-slate-400 group-hover:text-corporate-400 transition-colors" />
               </button>
               <button
                 onClick={() => setActiveTab('profile')}
-                className="relative cursor-pointer"
+                className="relative cursor-pointer group"
                 title="View Profile"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl blur opacity-75"></div>
-                <div className="relative h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <div className="absolute inset-0 bg-gradient-to-r from-corporate-500 to-corporate-600 rounded-xl blur opacity-75 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative h-10 w-10 bg-gradient-to-r from-corporate-500 to-corporate-600 rounded-xl flex items-center justify-center group-hover:shadow-glow transition-all duration-300">
                   {userProfile?.avatar_url ? (
                     <img src={userProfile.avatar_url} alt="Avatar" className="h-8 w-8 rounded-lg" />
                   ) : (
@@ -323,7 +328,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
               </button>
               <button
                 onClick={onLogout}
-                className="text-gray-600 hover:text-red-600 transition-colors font-medium"
+                className="text-slate-400 hover:text-ruby-400 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-slate-800/50"
               >
                 Logout
               </button>
@@ -333,31 +338,35 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
       </header>
 
       <div className="flex">
-        {/* Premium Glassmorphism Sidebar */}
-        <nav className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white/70 backdrop-blur-xl border-r border-white/20 shadow-2xl transition-all duration-500 ease-out`}>
+        {/* Enterprise Dark Sidebar */}
+        <nav className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 bg-navy-900 border-r border-slate-700/50 shadow-enterprise transition-all duration-500 ease-out sidebar-mobile`}>
           <div className="flex flex-col h-full pt-20 lg:pt-8">
             <div className="px-6 pb-6">
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4 border border-white/30">
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+              <div className="enterprise-card p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="p-2 bg-gradient-to-r from-corporate-500 to-corporate-600 rounded-lg shadow-enterprise">
                     <Sparkles className="h-4 w-4 text-white" />
                   </div>
-                  <span className="font-semibold text-gray-800">Quick Stats</span>
+                  <span className="font-semibold text-slate-100">Executive Summary</span>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span>Compliance Rate</span>
-                    <span className="font-bold text-green-600">{dashboardStats.complianceRate}%</span>
+                    <span className="text-sm text-slate-400">Compliance Rate</span>
+                    <span className="font-bold text-emerald-400 font-mono">{dashboardStats.complianceRate}%</span>
                   </div>
-                  <div className="flex justify-between items-center mt-1">
-                    <span>Properties</span>
-                    <span className="font-bold text-blue-600">{dashboardStats.totalProperties}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-400">Properties</span>
+                    <span className="font-bold text-corporate-400 font-mono">{dashboardStats.totalProperties}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-400">Violations</span>
+                    <span className="font-bold text-ruby-400 font-mono">{dashboardStats.totalViolations}</span>
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="flex-1 px-6 space-y-3">
+            <div className="flex-1 px-6 space-y-2">
               {navigationTabs.map(tab => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -368,23 +377,24 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                       setActiveTab(tab.id);
                       setSidebarOpen(false);
                     }}
-                    className={`group w-full flex items-center space-x-4 px-4 py-4 rounded-2xl font-medium text-sm transition-all duration-300 transform hover:scale-105 ${isActive
-                        ? 'bg-white/80 backdrop-blur-sm shadow-lg border border-white/30 text-gray-800'
-                        : 'text-gray-600 hover:bg-white/50 hover:backdrop-blur-sm'
+                    className={`group w-full flex items-center space-x-4 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-300 transform hover:scale-105 ${
+                      isActive
+                        ? 'bg-slate-800 border-l-4 border-gold-500 text-slate-100 shadow-enterprise'
+                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
                     }`}
                   >
-                    <div className={`p-2 rounded-xl transition-all duration-300 ${
+                    <div className={`p-2 rounded-lg transition-all duration-300 ${
                       isActive 
-                        ? `bg-gradient-to-r ${tab.gradient} shadow-lg` 
-                        : 'bg-gray-100 group-hover:bg-gray-200'
+                        ? 'bg-gradient-to-r from-corporate-500 to-corporate-600 shadow-enterprise' 
+                        : 'bg-slate-700 group-hover:bg-slate-600'
                     }`}>
                       <Icon className={`h-5 w-5 transition-colors ${
-                        isActive ? 'text-white' : 'text-gray-600 group-hover:text-gray-700'
+                        isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
                       }`} />
                     </div>
                     <span className="flex-1 text-left">{tab.label}</span>
                     {isActive && (
-                      <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-gradient-to-r from-gold-500 to-gold-400 rounded-full animate-pulse"></div>
                     )}
                   </button>
                 );
@@ -392,17 +402,17 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
             </div>
             
             <div className="p-6">
-              <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-4 text-white relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
+              <div className="enterprise-card p-4 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-corporate-500/10 to-gold-500/10"></div>
                 <div className="relative">
                   <div className="flex items-center space-x-2 mb-2">
-                    <Award className="h-4 w-4" />
-                    <span className="text-sm font-semibold">Current Plan</span>
+                    <Award className="h-4 w-4 text-gold-400" />
+                    <span className="text-sm font-semibold text-slate-100">Current Plan</span>
                   </div>
-                  <p className="text-xs text-gray-300 mb-3">
+                  <p className="text-xs text-slate-400 mb-3">
                     {APP_CONFIG.subscriptionTiers[userProfile?.subscription_tier || 'free'].name}
                   </p>
-                  <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-medium py-2 px-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300">
+                  <button className="w-full btn-gold text-xs font-medium py-2 px-3">
                     Upgrade Plan
                   </button>
                 </div>
@@ -420,200 +430,220 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 relative">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <main className="flex-1 relative bg-slate-900">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 main-content-mobile">
             {/* Dashboard Tab */}
             {activeTab === 'dashboard' && (
-              <div className="space-y-4">
-                {/* Welcome Section */}
+              <div className="space-y-6">
+                {/* Enterprise Welcome Section */}
                 <div className="relative">
-                  <div className="bg-white/60 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-lg">
+                  <div className="enterprise-card p-6">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between">
-                      <div className="mb-3 lg:mb-0">
-                        <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-1">
+                      <div className="mb-4 lg:mb-0">
+                        <h2 className="text-3xl font-bold gradient-text mb-2">
                           Welcome back, {userProfile?.full_name || 'User'}! 👋
                         </h2>
-                        <p className="text-gray-600">Here's what's happening with your properties today</p>
+                        <p className="text-slate-400 text-lg">Here's your property compliance overview for today</p>
                       </div>
                       <div className="flex items-center space-x-3">
                         <button 
                           onClick={() => setShowAddForm(!showAddForm)}
-                          className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-md"
+                          className="btn-primary flex items-center space-x-2"
                         >
                           <Plus className="h-4 w-4" />
-                          <span className="font-medium text-sm">Add Property</span>
+                          <span className="font-medium">Add Property</span>
                         </button>
-                        <button className="p-2 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl hover:bg-white/90 transition-all duration-300 group">
-                          <MoreVertical className="h-4 w-4 text-gray-600 group-hover:text-gray-800" />
+                        <button className="p-3 glass-effect-light hover:bg-slate-700/50 transition-all duration-300 group rounded-xl">
+                          <MoreVertical className="h-4 w-4 text-slate-400 group-hover:text-slate-200" />
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Compact Stats Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* Enterprise Metrics Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 metric-grid-mobile md:metric-grid-tablet lg:metric-grid-desktop">
                   {[
                     { 
                       label: 'Total Properties', 
                       value: dashboardStats.totalProperties, 
                       icon: Building, 
-                      gradient: 'from-blue-500 to-cyan-500'
+                      color: 'corporate',
+                      trend: '+2.3%'
                     },
                     { 
                       label: 'Compliance Rate', 
                       value: `${dashboardStats.complianceRate}%`, 
                       icon: CheckCircle, 
-                      gradient: 'from-green-500 to-emerald-500'
+                      color: 'emerald',
+                      trend: '+5.1%'
                     },
                     { 
                       label: 'Active Violations', 
                       value: dashboardStats.totalViolations, 
                       icon: AlertTriangle, 
-                      gradient: 'from-red-500 to-pink-500'
+                      color: 'ruby',
+                      trend: '-12.5%'
                     },
                     { 
                       label: 'Upcoming Inspections', 
                       value: dashboardStats.upcomingInspections, 
                       icon: Calendar, 
-                      gradient: 'from-orange-500 to-amber-500'
+                      color: 'gold',
+                      trend: '+3.2%'
                     }
                   ].map((stat, index) => {
                     const Icon = stat.icon;
+                    const colorClasses = {
+                      corporate: 'from-corporate-500 to-corporate-600',
+                      emerald: 'from-emerald-500 to-emerald-600',
+                      ruby: 'from-ruby-500 to-ruby-600',
+                      gold: 'from-gold-500 to-gold-600'
+                    };
+                    const textColorClasses = {
+                      corporate: 'text-corporate-400',
+                      emerald: 'text-emerald-400',
+                      ruby: 'text-ruby-400',
+                      gold: 'text-gold-400'
+                    };
                     return (
-                      <div key={index} className="bg-white/70 backdrop-blur-xl p-3 rounded-xl border border-white/20 shadow-sm hover:shadow-md transition-all duration-200">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className={`p-2 bg-gradient-to-r ${stat.gradient} rounded-lg`}>
-                              <Icon className="h-4 w-4 text-white" />
-                            </div>
-                            <div>
-                              <p className="text-xs font-medium text-gray-600">{stat.label}</p>
-                              <p className="text-2xl font-bold text-gray-900">
-                                {stat.value}
-                              </p>
-                            </div>
+                      <div key={index} className="metric-card group">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className={`p-3 bg-gradient-to-r ${colorClasses[stat.color]} rounded-xl shadow-enterprise group-hover:shadow-glow transition-all duration-300`}>
+                            <Icon className="h-6 w-6 text-white" />
                           </div>
+                          <div className="text-right">
+                            <div className={`text-sm font-medium ${textColorClasses[stat.color]}`}>
+                              {stat.trend}
+                            </div>
+                            <div className="text-xs text-slate-500">vs last month</div>
+                          </div>
+                        </div>
+                        <div className="metric-value text-4xl mb-1">
+                          {stat.value}
+                        </div>
+                        <div className="metric-label">
+                          {stat.label}
                         </div>
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Properties Section */}
-                <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg overflow-hidden">
-                  <div className="p-4 border-b border-white/10">
+                {/* Enterprise Properties Section */}
+                <div className="enterprise-card overflow-hidden">
+                  <div className="enterprise-card-header">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                       <div>
-                        <h2 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-1">
-                          Your Properties
+                        <h2 className="text-2xl font-bold text-slate-100 mb-2">
+                          Property Portfolio
                         </h2>
-                        <p className="text-gray-600 text-sm">Manage and monitor your property compliance in real-time</p>
+                        <p className="text-slate-400">Manage and monitor your property compliance in real-time</p>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3">
                         <div className="relative">
                           <select
                             value={filterType}
                             onChange={(e) => setFilterType(e.target.value)}
-                            className="appearance-none bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-2 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 font-medium text-sm"
+                            className="appearance-none bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-corporate-500 focus:border-corporate-500 transition-all duration-300 text-slate-200 font-medium text-sm hover:bg-slate-700"
                           >
                             <option value="all">All Property Types</option>
                             <option value="Residential">Residential</option>
                             <option value="Commercial">Commercial</option>
                             <option value="Mixed Use">Mixed Use</option>
                           </select>
-                          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+                          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Search */}
-                  <div className="p-3 border-b border-white/10 bg-gradient-to-r from-blue-50/50 to-purple-50/50">
+                  {/* Enterprise Search */}
+                  <div className="p-6 border-b border-slate-700/50 bg-gradient-to-r from-slate-800/50 to-slate-700/50">
                     <div className="flex flex-col lg:flex-row gap-3">
                       <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                         <input
                           type="text"
                           placeholder="Search properties by address, type, or status..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-sm"
+                          className="w-full pl-12 pr-4 py-3 bg-slate-800 border border-slate-600 rounded-xl focus:ring-2 focus:ring-corporate-500 focus:border-corporate-500 transition-all duration-300 text-slate-200 placeholder-slate-400 hover:bg-slate-700"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Properties Table */}
+                  {/* Enterprise Properties Table */}
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50/80 backdrop-blur-sm">
+                      <thead className="bg-slate-800/80 backdrop-blur-sm">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100/50" onClick={() => handleSort('address')}>
-                            <div className="flex items-center space-x-1">
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300 cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort('address')}>
+                            <div className="flex items-center space-x-2">
                               <span>Property Address</span>
-                              <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                              <ArrowUpDown className="h-4 w-4 text-slate-400" />
                             </div>
                           </th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">City</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Type</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Compliance</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Violations</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Actions</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">City</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Type</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Compliance</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Violations</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200/50">
+                      <tbody className="divide-y divide-slate-700/50">
                         {filteredAndSortedProperties().map((property) => (
-                          <tr key={property.id} className="hover:bg-white/50 transition-colors duration-200">
-                            <td className="px-4 py-2">
-                              <div className="flex items-center space-x-2">
-                                <div className="p-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-md">
-                                  <Building className="h-3 w-3 text-white" />
+                          <tr key={property.id} className="hover:bg-slate-800/50 transition-colors duration-200 group">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="p-2 bg-gradient-to-r from-corporate-500 to-corporate-600 rounded-lg shadow-enterprise">
+                                  <Building className="h-4 w-4 text-white" />
                                 </div>
                                 <div>
-                                  <div className="font-medium text-gray-900 text-sm">{property.address}</div>
-                                  <div className="text-xs text-gray-500">ID: {property.id}</div>
+                                  <div className="font-medium text-slate-100 text-sm">{property.address}</div>
+                                  <div className="text-xs text-slate-400 font-mono">ID: {property.id}</div>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-4 py-2">
-                              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                                property.city === 'NYC' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                                property.city === 'NYC' ? 'status-good' : 'status-excellent'
                               }`}>
                                 {property.city}
                               </span>
                             </td>
-                            <td className="px-4 py-2">
-                              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                                property.property_type === 'Residential' ? 'bg-green-100 text-green-800' :
-                                property.property_type === 'Commercial' ? 'bg-blue-100 text-blue-800' :
-                                'bg-purple-100 text-purple-800'
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                                property.property_type === 'Residential' ? 'status-excellent' :
+                                property.property_type === 'Commercial' ? 'status-good' :
+                                'status-warning'
                               }`}>
                                 {property.property_type}
                               </span>
                             </td>
-                            <td className="px-4 py-2">
-                              <div className="flex items-center space-x-1">
-                                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                <span className="font-medium text-sm">85%</span>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-glow"></div>
+                                <span className="font-medium text-slate-100 font-mono">85%</span>
                               </div>
                             </td>
-                            <td className="px-4 py-2">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                            <td className="px-6 py-4">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs status-excellent">
                                 0 violations
                               </span>
                             </td>
-                            <td className="px-4 py-2">
-                              <div className="flex items-center space-x-1">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => {
                                     setSelectedProperty(property);
                                     fetchPropertyDetails(property);
                                   }}
-                                  className="p-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                  className="p-2 text-corporate-400 hover:bg-corporate-500/20 rounded-lg transition-all duration-300 group-hover:shadow-glow"
                                   title="View Details"
                                 >
-                                  <Eye className="h-3 w-3" />
+                                  <Eye className="h-4 w-4" />
                                 </button>
                               </div>
                             </td>
@@ -636,15 +666,18 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
         </main>
       </div>
 
-      {/* Add Property Modal */}
+      {/* Enterprise Add Property Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="enterprise-card max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto animate-scale-in">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">Add New Property</h2>
+              <div>
+                <h2 className="text-3xl font-bold text-slate-100 mb-2">Add New Property</h2>
+                <p className="text-slate-400">Enter property details to begin compliance monitoring</p>
+              </div>
               <button
                 onClick={() => setShowAddForm(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-3 hover:bg-slate-700 rounded-xl transition-all duration-300 text-slate-400 hover:text-slate-200"
               >
                 <X className="h-6 w-6" />
               </button>
@@ -652,9 +685,9 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
 
             <form onSubmit={handleAddProperty} className="space-y-6">
               {/* Address Field - Always Visible */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                  <MapPin className="h-4 w-4" />
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-slate-200 flex items-center space-x-2">
+                  <MapPin className="h-4 w-4 text-corporate-400" />
                   <span>Property Address *</span>
                 </label>
                 <input
@@ -665,7 +698,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                     setNewProperty({...newProperty, address: e.target.value});
                     setPropertyDataFetched(false); // Reset if user changes address
                   }}
-                  className="w-full px-4 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700"
+                  className="w-full px-4 py-4 bg-slate-800 border border-slate-600 rounded-2xl focus:ring-2 focus:ring-corporate-500 focus:border-corporate-500 transition-all duration-300 text-slate-200 placeholder-slate-400 hover:bg-slate-700"
                   required
                   disabled={fetchingPropertyData || loading}
                 />
@@ -673,12 +706,12 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
 
               {/* Show fetching status */}
               {fetchingPropertyData && (
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                    <div className="text-sm text-blue-700">
-                      <p className="font-semibold">Fetching property data from {detectCityFromAddress(newProperty.address)}...</p>
-                      <p className="text-xs mt-1">Searching NYC/Philly Open Data for violations, permits, inspections, and compliance records.</p>
+                <div className="bg-slate-800 border border-corporate-500/30 rounded-2xl p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-corporate-500"></div>
+                    <div className="text-sm text-slate-200">
+                      <p className="font-semibold text-corporate-400">Fetching property data from {detectCityFromAddress(newProperty.address)}...</p>
+                      <p className="text-xs mt-1 text-slate-400">Searching NYC/Philly Open Data for violations, permits, inspections, and compliance records.</p>
                     </div>
                   </div>
                 </div>
@@ -686,23 +719,23 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
 
               {/* Show fetched data summary */}
               {propertyDataFetched && !fetchingPropertyData && (
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-                    <div className="text-sm text-green-700 flex-1">
-                      <p className="font-semibold">Property data retrieved successfully!</p>
-                      <div className="mt-2 space-y-1 text-xs">
-                        {newProperty.city && <p>📍 City: {newProperty.city}</p>}
-                        {newProperty.type && <p>🏢 Type: {newProperty.type}</p>}
-                        {newProperty.units && <p>🏠 Units: {newProperty.units}</p>}
-                        {newProperty.yearBuilt && <p>📅 Year Built: {newProperty.yearBuilt}</p>}
-                        {newProperty.bin_number && <p>🔢 BIN: {newProperty.bin_number}</p>}
-                        {newProperty.opa_account && <p>🔢 OPA: {newProperty.opa_account}</p>}
+                <div className="bg-slate-800 border border-emerald-500/30 rounded-2xl p-6">
+                  <div className="flex items-start space-x-4">
+                    <CheckCircle className="h-6 w-6 text-emerald-400 mt-0.5" />
+                    <div className="text-sm text-slate-200 flex-1">
+                      <p className="font-semibold text-emerald-400">Property data retrieved successfully!</p>
+                      <div className="mt-3 space-y-2 text-xs">
+                        {newProperty.city && <p className="flex items-center space-x-2"><span className="text-slate-400">📍</span><span className="text-slate-300">City: {newProperty.city}</span></p>}
+                        {newProperty.type && <p className="flex items-center space-x-2"><span className="text-slate-400">🏢</span><span className="text-slate-300">Type: {newProperty.type}</span></p>}
+                        {newProperty.units && <p className="flex items-center space-x-2"><span className="text-slate-400">🏠</span><span className="text-slate-300">Units: {newProperty.units}</span></p>}
+                        {newProperty.yearBuilt && <p className="flex items-center space-x-2"><span className="text-slate-400">📅</span><span className="text-slate-300">Year Built: {newProperty.yearBuilt}</span></p>}
+                        {newProperty.bin_number && <p className="flex items-center space-x-2"><span className="text-slate-400">🔢</span><span className="text-slate-300">BIN: {newProperty.bin_number}</span></p>}
+                        {newProperty.opa_account && <p className="flex items-center space-x-2"><span className="text-slate-400">🔢</span><span className="text-slate-300">OPA: {newProperty.opa_account}</span></p>}
                       </div>
-                      <p className="text-xs mt-2 text-gray-600">
-                        <span className="font-medium">Real Data:</span> Retrieved from {newProperty.city} Open Data APIs including violations, permits, and compliance information.
+                      <p className="text-xs mt-3 text-slate-400">
+                        <span className="font-medium text-slate-300">Real Data:</span> Retrieved from {newProperty.city} Open Data APIs including violations, permits, and compliance information.
                       </p>
-                      <p className="text-xs mt-1 text-gray-600">Click "Add Property" below to save this to your dashboard.</p>
+                      <p className="text-xs mt-2 text-slate-400">Click "Add Property" below to save this to your dashboard.</p>
                     </div>
                   </div>
                 </div>
@@ -712,7 +745,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                 <button
                   type="submit"
                   disabled={loading || fetchingPropertyData}
-                  className="flex items-center justify-center space-x-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transform hover:scale-105 font-medium"
+                  className="btn-primary flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <>
@@ -751,7 +784,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'profile' }) => {
                       managementCompany: ''
                     });
                   }}
-                  className="px-8 py-4 bg-white/80 backdrop-blur-sm border border-white/30 text-gray-700 rounded-2xl hover:bg-white/90 transition-all duration-300 font-medium"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>

@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 * {
   box-sizing: border-box;
@@ -15,46 +16,64 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8fafc;
+  background-color: #0f172a;
+  color: #f8fafc;
 }
 
 .App {
   min-height: 100vh;
 }
 
-/* Custom scrollbar */
+/* Enterprise Dark Theme Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #1e293b;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: #334155;
+  border-radius: 4px;
+  border: 1px solid #475569;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #64748b;
+  border-color: #94a3b8;
 }
 
-/* Smooth transitions for all interactive elements */
+/* Enterprise Smooth Transitions */
 button, input, select, textarea {
   transition: all 0.2s ease-in-out;
 }
 
-/* Focus styles for accessibility */
+/* Enterprise Focus Styles */
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
-/* Custom animations */
+/* Enterprise Button Styles */
+.btn-primary {
+  @apply bg-gradient-to-r from-corporate-500 to-corporate-600 text-white px-6 py-3 rounded-xl font-medium shadow-enterprise hover:shadow-glow transition-all duration-300 transform hover:scale-105;
+}
+
+.btn-secondary {
+  @apply bg-slate-800 text-slate-200 border border-slate-600 px-6 py-3 rounded-xl font-medium hover:bg-slate-700 hover:border-slate-500 transition-all duration-300;
+}
+
+.btn-gold {
+  @apply bg-gradient-to-r from-gold-500 to-gold-600 text-white px-6 py-3 rounded-xl font-medium shadow-enterprise hover:shadow-glow-gold transition-all duration-300 transform hover:scale-105;
+}
+
+/* Enterprise Animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -70,9 +89,9 @@ textarea:focus-visible {
   animation: fadeInUp 0.5s ease-out;
 }
 
-/* Loading spinner */
+/* Enterprise Loading Spinner */
 .loading-spinner {
-  border: 2px solid #f3f4f6;
+  border: 2px solid #334155;
   border-top: 2px solid #3b82f6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -83,21 +102,90 @@ textarea:focus-visible {
   100% { transform: rotate(360deg); }
 }
 
-/* Custom utility classes */
+/* Enterprise Glass Effects */
 .glass-effect {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 65, 85, 0.3);
 }
 
+.glass-effect-light {
+  background: rgba(248, 250, 252, 0.1);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* Enterprise Gradient Text */
 .gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Responsive text sizes */
+.gradient-text-gold {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Enterprise Card Styles */
+.enterprise-card {
+  @apply bg-slate-800 border border-slate-700 rounded-2xl shadow-enterprise hover:shadow-glow transition-all duration-300;
+}
+
+.enterprise-card-header {
+  @apply bg-gradient-to-r from-slate-800 to-slate-700 border-b border-slate-600 rounded-t-2xl p-6;
+}
+
+/* Enterprise Status Indicators */
+.status-excellent {
+  @apply bg-emerald-100 text-emerald-800 border border-emerald-200;
+}
+
+.status-good {
+  @apply bg-corporate-100 text-corporate-800 border border-corporate-200;
+}
+
+.status-warning {
+  @apply bg-gold-100 text-gold-800 border border-gold-200;
+}
+
+.status-danger {
+  @apply bg-ruby-100 text-ruby-800 border border-ruby-200;
+}
+
+/* Enterprise Data Visualization */
+.metric-card {
+  @apply bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-enterprise hover:shadow-glow transition-all duration-300;
+}
+
+.metric-value {
+  @apply text-3xl font-bold text-slate-100 font-mono;
+}
+
+.metric-label {
+  @apply text-sm text-slate-400 font-medium;
+}
+
+.metric-trend {
+  @apply text-sm font-medium;
+}
+
+.trend-up {
+  @apply text-emerald-400;
+}
+
+.trend-down {
+  @apply text-ruby-400;
+}
+
+.trend-neutral {
+  @apply text-slate-400;
+}
+
+/* Enterprise Responsive Design */
 @media (max-width: 640px) {
   .text-responsive-lg {
     font-size: 1.25rem;
@@ -105,6 +193,18 @@ textarea:focus-visible {
   
   .text-responsive-xl {
     font-size: 1.5rem;
+  }
+  
+  .enterprise-card {
+    @apply p-4;
+  }
+  
+  .metric-card {
+    @apply p-4;
+  }
+  
+  .metric-value {
+    @apply text-2xl;
   }
 }
 
@@ -115,5 +215,84 @@ textarea:focus-visible {
   
   .text-responsive-xl {
     font-size: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .enterprise-card {
+    @apply p-6;
+  }
+  
+  .metric-card {
+    @apply p-6;
+  }
+}
+
+/* Enterprise Mobile Optimizations */
+@media (max-width: 768px) {
+  .sidebar-mobile {
+    @apply w-full;
+  }
+  
+  .main-content-mobile {
+    @apply px-4 py-4;
+  }
+  
+  .metric-grid-mobile {
+    @apply grid-cols-1 gap-4;
+  }
+}
+
+/* Enterprise Tablet Optimizations */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .metric-grid-tablet {
+    @apply grid-cols-2 gap-6;
+  }
+}
+
+/* Enterprise Desktop Optimizations */
+@media (min-width: 1024px) {
+  .metric-grid-desktop {
+    @apply grid-cols-4 gap-6;
+  }
+}
+
+/* Enterprise Dark Mode Enhancements */
+@media (prefers-color-scheme: dark) {
+  .enterprise-card {
+    @apply shadow-enterprise;
+  }
+  
+  .glass-effect {
+    @apply bg-slate-800/90;
+  }
+}
+
+/* Enterprise High Contrast Mode */
+@media (prefers-contrast: high) {
+  .enterprise-card {
+    @apply border-2 border-slate-600;
+  }
+  
+  .btn-primary {
+    @apply border-2 border-corporate-400;
+  }
+  
+  .btn-secondary {
+    @apply border-2 border-slate-500;
+  }
+}
+
+/* Enterprise Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-glow,
+  .animate-pulse-slow,
+  .animate-float,
+  .animate-scale-in {
+    animation: none;
+  }
+  
+  .transition-all {
+    transition: none;
   }
 }
