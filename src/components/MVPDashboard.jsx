@@ -617,47 +617,45 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                     <table className="w-full">
                       <thead className="bg-slate-800/80 backdrop-blur-sm">
                         <tr>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300 cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort('address')}>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#CBD5E1] cursor-pointer hover:bg-slate-700/50 transition-colors tracking-[0.025em]" onClick={() => handleSort('address')}>
                             <div className="flex items-center space-x-2">
                               <span>Property Address</span>
                               <ArrowUpDown className="h-4 w-4 text-slate-400" />
                             </div>
                           </th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">City</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Compliance</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Violations</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#CBD5E1] tracking-[0.025em]">City</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#CBD5E1] tracking-[0.025em]">Compliance</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#CBD5E1] tracking-[0.025em]">Violations</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-[#CBD5E1] tracking-[0.025em]">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-700/50">
-                        {filteredAndSortedProperties().map((property) => (
-                          <tr key={property.id} className="hover:bg-slate-800/50 transition-colors duration-200 group">
+                        {filteredAndSortedProperties().map((property, index) => (
+                          <tr key={property.id} className={`${index % 2 === 0 ? 'bg-[#1E293B]' : 'bg-[#1A2332]'} hover:bg-[#334155] transition-colors duration-200 group`}>
                             <td className="px-6 py-4">
                               <div className="flex items-center space-x-3">
                                 <div className="p-2 bg-gradient-to-r from-corporate-500 to-corporate-600 rounded-lg shadow-enterprise">
                                   <Building className="h-4 w-4 text-white" />
                                 </div>
                                 <div>
-                                  <div className="font-medium text-slate-100 text-sm">{property.address}</div>
-                                  <div className="text-xs text-slate-400 font-mono">ID: {property.id}</div>
+                                  <div className="font-semibold text-[#F8FAFC] text-sm">{property.address}</div>
+                                  <div className="text-xs text-[#94A3B8] font-mono font-normal">ID: {property.id}</div>
                                 </div>
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                                property.city === 'NYC' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                              }`}>
+                              <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-[#334155]/60 text-[#F8FAFC]">
                                 {property.city}
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center space-x-2">
                                 <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-glow"></div>
-                                <span className="font-medium text-slate-100 font-mono">85%</span>
+                                <span className="font-semibold text-white font-mono">85%</span>
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#065F46] text-white">
                                 0 violations
                               </span>
                             </td>
@@ -668,10 +666,10 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                                     setSelectedProperty(property);
                                     fetchPropertyDetails(property);
                                   }}
-                                  className="p-2 text-corporate-400 hover:bg-corporate-500/20 rounded-lg transition-all duration-300 group-hover:shadow-glow"
+                                  className="p-2 text-[#94A3B8] hover:text-[#3B82F6] hover:bg-corporate-500/20 rounded-lg transition-all duration-300 group-hover:shadow-glow"
                                   title="View Details"
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-5 w-5" />
                                 </button>
                               </div>
                             </td>
