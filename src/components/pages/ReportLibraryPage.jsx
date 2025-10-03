@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
+import realTimeDataService from '../../services/RealTimeDataService';
 import {
   FileText, Download, Eye, Share, Calendar, Building, Filter,
   Search, Plus, BarChart3, TrendingUp, AlertTriangle, CheckCircle,
   Clock, Archive, Star, Tag
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import ComplianceReportPage from './ComplianceReportPage';
 
 const ReportLibraryPage = ({ user, properties }) => {
   const { theme, isDark } = useTheme();
@@ -15,80 +17,121 @@ const ReportLibraryPage = ({ user, properties }) => {
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [realTimeUpdates, setRealTimeUpdates] = useState(false);
 
   useEffect(() => {
     fetchReports();
   }, [user.id]);
 
+  useEffect(() => {
+    if (user?.id) {
+      // Subscribe to real-time updates for user reports
+      const unsubscribe = realTimeDataService.subscribeToUserReports(
+        user.id,
+        (update) => {
+          console.log('📋 Reports update received:', update);
+          setRealTimeUpdates(true);
+          
+          // Handle reports updates
+          if (update.type === 'reports_update') {
+            // Refresh reports list
+            fetchReports();
+          }
+        }
+      );
+
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [user?.id]);
+
   const fetchReports = async () => {
     try {
       setLoading(true);
-      // Mock data for now - replace with actual API calls
-      const mockReports = [
-        {
-          id: 1,
-          title: 'Monthly Compliance Report',
-          type: 'compliance',
-          status: 'completed',
-          property_address: '140 W 28th St, New York, NY 10001',
-          created_at: '2024-01-15',
-          updated_at: '2024-01-20',
-          file_size: '2.3 MB',
-          format: 'PDF',
-          description: 'Comprehensive monthly compliance report covering all property requirements',
-          tags: ['compliance', 'monthly', 'inspection'],
-          downloads: 15,
-          shared: 3
-        },
-        {
-          id: 2,
-          title: 'Fire Safety Inspection Report',
-          type: 'inspection',
-          status: 'completed',
-          property_address: '140 W 28th St, New York, NY 10001',
-          created_at: '2024-01-10',
-          updated_at: '2024-01-10',
-          file_size: '1.8 MB',
-          format: 'PDF',
-          description: 'Annual fire safety inspection report from NYC Fire Department',
-          tags: ['fire_safety', 'inspection', 'annual'],
-          downloads: 8,
-          shared: 1
-        },
-        {
-          id: 3,
-          title: 'Violation Analysis Report',
-          type: 'analysis',
-          status: 'in_progress',
-          property_address: '140 W 28th St, New York, NY 10001',
-          created_at: '2024-01-12',
-          updated_at: '2024-01-18',
-          file_size: '1.5 MB',
-          format: 'Excel',
-          description: 'Detailed analysis of property violations and resolution strategies',
-          tags: ['violations', 'analysis', 'strategy'],
-          downloads: 5,
-          shared: 0
-        },
-        {
-          id: 4,
-          title: 'Boiler Inspection Certificate',
-          type: 'certificate',
-          status: 'completed',
-          property_address: '140 W 28th St, New York, NY 10001',
-          created_at: '2024-01-05',
-          updated_at: '2024-01-05',
-          file_size: '0.9 MB',
-          format: 'PDF',
-          description: 'Annual boiler inspection certificate and compliance documentation',
-          tags: ['boiler', 'certificate', 'hvac'],
-          downloads: 12,
-          shared: 2
-        }
-      ];
-      setReports(mockReports);
+      
+      // Fetch reports from backend API
+      const response = await fetch(`/api/compliance-reports?user_id=${user.id}`);
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch reports');
+      }
+      
+      // Transform reports for display
+      const transformedReports = (result.reports || []).map(report => ({
+        id: report.id,
+        title: `Compliance Report - ${report.properties?.address || 'Unknown Property'}`,
+        type: 'compliance',
+        status: report.status,
+        property_address: report.properties?.address,
+        property_id: report.property_id,
+        compliance_score: report.compliance_score,
+        risk_level: report.risk_level,
+        violations_count: report.violations ? JSON.parse(report.violations).hpd?.length + JSON.parse(report.violations).dob?.length : 0,
+        created_at: report.generated_at,
+        updated_at: report.updated_at,
+        file_size: '2.3 MB',
+        format: 'PDF',
+        description: `Comprehensive compliance analysis with ${report.compliance_score}% score`,
+        tags: ['compliance', 'ai-generated', report.risk_level?.toLowerCase()],
+        downloads: report.download_count || 0,
+        shared: 0,
+        ai_analysis: report.ai_analysis,
+        recommendations: report.recommendations
+      }));
+      
+      setReports(transformedReports);
     } catch (error) {
       console.error('Error fetching reports:', error);
+      // Fallback to direct Supabase query if API fails
+      try {
+        const { data: reports, error } = await supabase
+          .from('compliance_reports')
+          .select(`
+            *,
+            properties (
+              id,
+              address,
+              city,
+              state,
+              zip_code,
+              property_type
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('generated_at', { ascending: false });
+
+        if (error) throw error;
+        
+        // Transform reports for display
+        const transformedReports = reports.map(report => ({
+          id: report.id,
+          title: `Compliance Report - ${report.properties?.address || 'Unknown Property'}`,
+          type: 'compliance',
+          status: report.status,
+          property_address: report.properties?.address,
+          property_id: report.property_id,
+          compliance_score: report.compliance_score,
+          risk_level: report.risk_level,
+          violations_count: report.violations ? JSON.parse(report.violations).hpd?.length + JSON.parse(report.violations).dob?.length : 0,
+          created_at: report.generated_at,
+          updated_at: report.updated_at,
+          file_size: '2.3 MB',
+          format: 'PDF',
+          description: `Comprehensive compliance analysis with ${report.compliance_score}% score`,
+          tags: ['compliance', 'ai-generated', report.risk_level?.toLowerCase()],
+          downloads: report.download_count || 0,
+          shared: 0,
+          ai_analysis: report.ai_analysis,
+          recommendations: report.recommendations
+        }));
+        
+        setReports(transformedReports);
+      } catch (fallbackError) {
+        console.error('Fallback fetch also failed:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
@@ -124,6 +167,31 @@ const ReportLibraryPage = ({ user, properties }) => {
     }
   };
 
+  const viewReport = (report) => {
+    setSelectedReport(report);
+  };
+
+  const closeReport = () => {
+    setSelectedReport(null);
+  };
+
+  const getComplianceColor = (score) => {
+    if (score >= 90) return { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200' };
+    if (score >= 75) return { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' };
+    if (score >= 60) return { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200' };
+    return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200' };
+  };
+
+  const getRiskColor = (level) => {
+    const colors = {
+      'LOW': { bg: 'bg-green-100', text: 'text-green-700' },
+      'MEDIUM': { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+      'HIGH': { bg: 'bg-orange-100', text: 'text-orange-700' },
+      'CRITICAL': { bg: 'bg-red-100', text: 'text-red-700' }
+    };
+    return colors[level] || colors['MEDIUM'];
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
@@ -154,6 +222,16 @@ const ReportLibraryPage = ({ user, properties }) => {
     totalSize: reports.reduce((sum, r) => sum + parseFloat(r.file_size), 0).toFixed(1)
   };
 
+  // If a report is selected, show the detailed report page
+  if (selectedReport) {
+    return (
+      <ComplianceReportPage 
+        reportId={selectedReport.id} 
+        onClose={closeReport}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -164,6 +242,12 @@ const ReportLibraryPage = ({ user, properties }) => {
             <p className="text-slate-400 text-lg">Access and manage all your property compliance reports and documents</p>
           </div>
           <div className="flex items-center space-x-3">
+            {realTimeUpdates && (
+              <div className="flex items-center space-x-2 px-3 py-2 bg-green-100 text-green-800 rounded-lg">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">Live Updates</span>
+              </div>
+            )}
             <button className="btn-primary">
               <Plus className="h-4 w-4" />
               <span>Generate Report</span>
@@ -293,6 +377,34 @@ const ReportLibraryPage = ({ user, properties }) => {
                           <span>{report.format} • {report.file_size}</span>
                         </div>
                       </div>
+                      
+                      {/* Compliance Score and Risk Level */}
+                      {report.compliance_score !== undefined && (
+                        <div className="flex items-center space-x-4 mb-4">
+                          <div className={`px-3 py-2 rounded-lg border ${getComplianceColor(report.compliance_score).bg} ${getComplianceColor(report.compliance_score).text} ${getComplianceColor(report.compliance_score).border}`}>
+                            <div className="flex items-center space-x-2">
+                              <BarChart3 className="h-4 w-4" />
+                              <span className="font-semibold">Score: {report.compliance_score}%</span>
+                            </div>
+                          </div>
+                          {report.risk_level && (
+                            <div className={`px-3 py-2 rounded-lg border ${getRiskColor(report.risk_level).bg} ${getRiskColor(report.risk_level).text}`}>
+                              <div className="flex items-center space-x-2">
+                                <AlertTriangle className="h-4 w-4" />
+                                <span className="font-semibold">Risk: {report.risk_level}</span>
+                              </div>
+                            </div>
+                          )}
+                          {report.violations_count > 0 && (
+                            <div className="px-3 py-2 rounded-lg border bg-red-100 text-red-800 border-red-200">
+                              <div className="flex items-center space-x-2">
+                                <AlertTriangle className="h-4 w-4" />
+                                <span className="font-semibold">{report.violations_count} Violations</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center space-x-4 text-sm text-slate-500">
                         <div className="flex items-center space-x-1">
                           <Download className="h-4 w-4" />
@@ -312,7 +424,11 @@ const ReportLibraryPage = ({ user, properties }) => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
-                      <button className="p-2 text-corporate-400 hover:bg-corporate-500/20 rounded-lg transition-all duration-300">
+                      <button 
+                        onClick={() => viewReport(report)}
+                        className="p-2 text-corporate-400 hover:bg-corporate-500/20 rounded-lg transition-all duration-300"
+                        title="View Report"
+                      >
                         <Eye className="h-4 w-4" />
                       </button>
                       <button className="p-2 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition-all duration-300">

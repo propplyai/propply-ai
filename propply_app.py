@@ -11,7 +11,9 @@ import os
 import uuid
 import asyncio
 import logging
+import requests
 from datetime import datetime, timedelta
+from supabase import create_client, Client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,6 +40,15 @@ ai_analyzer = AIComplianceAnalyzer()
 vendor_marketplace = SimpleVendorMarketplace(
     apify_token=os.getenv('APIFY_TOKEN')
 )
+
+# Initialize Supabase client
+supabase_url = os.getenv('SUPABASE_URL')
+supabase_key = os.getenv('SUPABASE_ANON_KEY')
+if supabase_url and supabase_key:
+    supabase = create_client(supabase_url, supabase_key)
+else:
+    print("Warning: Supabase credentials not found")
+    supabase = None
 
 # Initialize NYC data sync service
 try:
@@ -147,11 +158,68 @@ def add_property_post():
         # Generate a property ID (in real app, this would be saved to database)
         property_id = str(uuid.uuid4())
         
+        # Trigger compliance report generation in background
+        try:
+            if supabase and city == 'NYC':
+                # Store property in database first
+                property_record = {
+                    'id': property_id,
+                    'user_id': data.get('user_id', 'anonymous'),
+                    'address': address,
+                    'city': city,
+                    'property_type': property_type,
+                    'units': units,
+                    'year_built': year_built,
+                    'square_footage': square_footage,
+                    'contact_name': contact_name,
+                    'contact_email': contact_email,
+                    'contact_phone': contact_phone,
+                    'management_company': management_company,
+                    'owner_name': owner_name,
+                    'owner_email': owner_email,
+                    'compliance_systems': compliance_systems,
+                    'status': 'Active',
+                    'created_at': datetime.now().isoformat(),
+                    'updated_at': datetime.now().isoformat()
+                }
+                
+                # Add NYC-specific data if available
+                if 'nyc_data' in property_data:
+                    property_record.update({
+                        'bin': property_data['nyc_data'].get('bin'),
+                        'borough': property_data['nyc_data'].get('borough'),
+                        'block': property_data['nyc_data'].get('block'),
+                        'lot': property_data['nyc_data'].get('lot')
+                    })
+                
+                # Insert property into database
+                supabase.table('properties').insert(property_record).execute()
+                
+                # Generate compliance report
+                report_response = requests.post('http://localhost:5000/api/generate-compliance-report', 
+                    json={
+                        'property_id': property_id,
+                        'user_id': data.get('user_id', 'anonymous')
+                    },
+                    timeout=300  # 5 minute timeout for report generation
+                )
+                
+                if report_response.status_code == 200:
+                    report_data = report_response.json()
+                    print(f"✅ Compliance report generated: {report_data.get('report_id')}")
+                else:
+                    print(f"⚠️ Report generation failed: {report_response.text}")
+                    
+        except Exception as e:
+            print(f"⚠️ Background report generation failed: {e}")
+            # Don't fail the property addition if report generation fails
+        
         return jsonify({
             'success': True,
             'message': 'Property added successfully!',
             'property_id': property_id,
-            'data': property_data
+            'data': property_data,
+            'report_generation': 'triggered'
         })
         
     except Exception as e:
@@ -430,6 +498,132 @@ def api_generate_compliance():
         
     except Exception as e:
         return jsonify({'error': f'Compliance report generation failed: {str(e)}'}), 500
+
+@app.route('/api/generate-compliance-report', methods=['POST'])
+def api_generate_compliance_report():
+    """Generate comprehensive compliance report and store in database"""
+    try:
+        data = request.get_json()
+        property_id = data.get('property_id')
+        user_id = data.get('user_id')
+        
+        if not property_id or not user_id:
+            return jsonify({'error': 'Property ID and User ID are required'}), 400
+        
+        # Get property details
+        property_data = supabase.table('properties').select('*').eq('id', property_id).single().execute()
+        if not property_data.data:
+            return jsonify({'error': 'Property not found'}), 404
+        
+        property_info = property_data.data
+        address = property_info['address']
+        city = property_info.get('city', 'NYC').upper()
+        
+        # Generate compliance report using NYC scripts
+        if city == 'NYC':
+            compliance_system = ComprehensivePropertyComplianceSystem()
+            
+            # Process the property using the comprehensive system
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                record = loop.run_until_complete(
+                    compliance_system.process_property(address, property_info.get('borough'))
+                )
+            finally:
+                loop.close()
+            
+            # Parse violations and equipment data
+            hpd_violations = json.loads(record.hpd_violations_data) if record.hpd_violations_data else []
+            dob_violations = json.loads(record.dob_violations_data) if record.dob_violations_data else []
+            elevator_data = json.loads(record.elevator_data) if record.elevator_data else []
+            boiler_data = json.loads(record.boiler_data) if record.boiler_data else []
+            electrical_data = json.loads(record.electrical_data) if record.electrical_data else []
+            
+            # Create AI analysis structure
+            ai_analysis = {
+                'violations': {
+                    'hpd': hpd_violations,
+                    'dob': dob_violations,
+                    'total': len(hpd_violations) + len(dob_violations),
+                    'active': len([v for v in hpd_violations if v.get('violation_status') == 'OPEN']) + 
+                             len([v for v in dob_violations if v.get('status') == 'ACTIVE'])
+                },
+                'equipment': {
+                    'elevators': elevator_data,
+                    'boilers': boiler_data,
+                    'electrical': electrical_data
+                },
+                'compliance_scores': {
+                    'hpd': record.hpd_compliance_score,
+                    'dob': record.dob_compliance_score,
+                    'elevator': record.elevator_compliance_score,
+                    'electrical': record.electrical_compliance_score,
+                    'overall': record.overall_compliance_score
+                }
+            }
+            
+            # Generate recommendations based on violations
+            recommendations = []
+            if record.hpd_violations_active > 0:
+                recommendations.append(f"Address {record.hpd_violations_active} active HPD violations")
+            if record.dob_violations_active > 0:
+                recommendations.append(f"Resolve {record.dob_violations_active} active DOB violations")
+            if record.elevator_devices_total > 0 and record.elevator_devices_active < record.elevator_devices_total:
+                recommendations.append("Schedule elevator inspections for inactive devices")
+            if record.electrical_permits_total == 0:
+                recommendations.append("Consider recent electrical permit applications for safety compliance")
+            
+            # Calculate risk level
+            risk_level = 'LOW'
+            if record.overall_compliance_score < 50:
+                risk_level = 'CRITICAL'
+            elif record.overall_compliance_score < 70:
+                risk_level = 'HIGH'
+            elif record.overall_compliance_score < 85:
+                risk_level = 'MEDIUM'
+            
+            # Store report in database
+            report_data = {
+                'user_id': user_id,
+                'property_id': property_id,
+                'report_type': 'full_compliance',
+                'status': 'completed',
+                'ai_analysis': ai_analysis,
+                'compliance_score': int(record.overall_compliance_score),
+                'risk_level': risk_level,
+                'violations': json.dumps({
+                    'hpd': hpd_violations,
+                    'dob': dob_violations
+                }),
+                'recommendations': recommendations,
+                'cost_estimates': {},
+                'generated_at': datetime.now().isoformat(),
+                'expires_at': (datetime.now() + timedelta(days=30)).isoformat()
+            }
+            
+            # Insert into database
+            result = supabase.table('compliance_reports').insert(report_data).execute()
+            
+            if result.data:
+                return jsonify({
+                    'success': True,
+                    'report_id': result.data[0]['id'],
+                    'compliance_score': int(record.overall_compliance_score),
+                    'risk_level': risk_level,
+                    'violations_count': len(hpd_violations) + len(dob_violations),
+                    'recommendations': recommendations
+                })
+            else:
+                return jsonify({'error': 'Failed to save report to database'}), 500
+        
+        else:
+            return jsonify({'error': f'Compliance reports not yet supported for {city}'}), 400
+        
+    except Exception as e:
+        logger.error(f"Error generating compliance report: {str(e)}")
+        return jsonify({'error': f'Report generation failed: {str(e)}'}), 500
 
 @app.route('/api/ai-optimized-analysis', methods=['POST'])
 def api_initiate_ai_analysis():
@@ -986,6 +1180,272 @@ def api_health_check():
         'timestamp': datetime.now().isoformat(),
         'version': '2.0'
     })
+
+# ============================================
+# FRONTEND INTEGRATION ENDPOINTS
+# ============================================
+
+@app.route('/api/compliance-reports', methods=['GET'])
+def api_get_compliance_reports():
+    """Get all compliance reports for a user"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'user_id is required'}), 400
+        
+        # Get reports first
+        reports = supabase.table('compliance_reports')\
+            .select('*')\
+            .eq('user_id', user_id)\
+            .order('generated_at', desc=True)\
+            .execute()
+        
+        if not reports.data:
+            return jsonify({
+                'success': True,
+                'reports': []
+            })
+        
+        # Get property details for each report
+        reports_with_properties = []
+        for report in reports.data:
+            property_data = supabase.table('properties')\
+                .select('*')\
+                .eq('id', report['property_id'])\
+                .single()\
+                .execute()
+            
+            report_with_property = {
+                **report,
+                'properties': property_data.data if property_data.data else None
+            }
+            reports_with_properties.append(report_with_property)
+        
+        return jsonify({
+            'success': True,
+            'reports': reports_with_properties
+        })
+            
+    except Exception as e:
+        logger.error(f"Error fetching compliance reports: {e}")
+        return jsonify({'error': f'Failed to fetch reports: {str(e)}'}), 500
+
+@app.route('/api/compliance-reports/<report_id>', methods=['GET'])
+def api_get_compliance_report(report_id):
+    """Get a specific compliance report with full details"""
+    try:
+        # Get report first
+        report = supabase.table('compliance_reports')\
+            .select('*')\
+            .eq('id', report_id)\
+            .single()\
+            .execute()
+        
+        if not report.data:
+            return jsonify({'error': 'Report not found'}), 404
+        
+        # Get property details separately
+        property_data = supabase.table('properties')\
+            .select('*')\
+            .eq('id', report.data['property_id'])\
+            .single()\
+            .execute()
+        
+        # Combine the data
+        report_with_property = {
+            **report.data,
+            'properties': property_data.data if property_data.data else None
+        }
+        
+        return jsonify({
+            'success': True,
+            'report': report_with_property
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching compliance report: {e}")
+        return jsonify({'error': f'Failed to fetch report: {str(e)}'}), 500
+
+@app.route('/api/properties/<property_id>/compliance-data', methods=['GET'])
+def api_get_property_compliance_data(property_id):
+    """Get comprehensive compliance data for a property"""
+    try:
+        # Get property details
+        property_data = supabase.table('properties')\
+            .select('*')\
+            .eq('id', property_id)\
+            .single()\
+            .execute()
+        
+        if not property_data.data:
+            return jsonify({'error': 'Property not found'}), 404
+        
+        property_info = property_data.data
+        city = property_info.get('city', 'NYC').upper()
+        
+        # Get compliance data based on city
+        if city == 'NYC':
+            # Get NYC property data
+            nyc_property = supabase.table('nyc_properties')\
+                .select('*')\
+                .eq('property_id', property_id)\
+                .single()\
+                .execute()
+            
+            if not nyc_property.data:
+                return jsonify({'error': 'NYC property data not found'}), 404
+            
+            nyc_property_id = nyc_property.data['id']
+            
+            # Get compliance summary
+            compliance_summary = supabase.table('nyc_compliance_summary')\
+                .select('*')\
+                .eq('nyc_property_id', nyc_property_id)\
+                .single()\
+                .execute()
+            
+            # Get violations
+            dob_violations = supabase.table('nyc_dob_violations')\
+                .select('*')\
+                .eq('nyc_property_id', nyc_property_id)\
+                .execute()
+            
+            hpd_violations = supabase.table('nyc_hpd_violations')\
+                .select('*')\
+                .eq('nyc_property_id', nyc_property_id)\
+                .execute()
+            
+            # Get equipment data
+            elevators = supabase.table('nyc_elevator_inspections')\
+                .select('*')\
+                .eq('nyc_property_id', nyc_property_id)\
+                .execute()
+            
+            boilers = supabase.table('nyc_boiler_inspections')\
+                .select('*')\
+                .eq('nyc_property_id', nyc_property_id)\
+                .execute()
+            
+            electrical_permits = supabase.table('nyc_electrical_permits')\
+                .select('*')\
+                .eq('nyc_property_id', nyc_property_id)\
+                .execute()
+            
+            return jsonify({
+                'success': True,
+                'property': property_info,
+                'nyc_property': nyc_property.data,
+                'compliance_summary': compliance_summary.data,
+                'violations': {
+                    'dob': dob_violations.data or [],
+                    'hpd': hpd_violations.data or []
+                },
+                'equipment': {
+                    'elevators': elevators.data or [],
+                    'boilers': boilers.data or [],
+                    'electrical': electrical_permits.data or []
+                }
+            })
+        
+        else:
+            return jsonify({'error': f'Compliance data not yet supported for {city}'}), 400
+        
+    except Exception as e:
+        logger.error(f"Error fetching property compliance data: {e}")
+        return jsonify({'error': f'Failed to fetch compliance data: {str(e)}'}), 500
+
+@app.route('/api/properties/<property_id>/sync', methods=['POST'])
+def api_sync_property_data(property_id):
+    """Sync property data with city APIs"""
+    try:
+        # Get property details
+        property_data = supabase.table('properties')\
+            .select('*')\
+            .eq('id', property_id)\
+            .single()\
+            .execute()
+        
+        if not property_data.data:
+            return jsonify({'error': 'Property not found'}), 404
+        
+        property_info = property_data.data
+        city = property_info.get('city', 'NYC').upper()
+        
+        if city == 'NYC':
+            # Use NYC sync service
+            if not nyc_sync_service:
+                return jsonify({'error': 'NYC Sync Service not available'}), 500
+            
+            result = nyc_sync_service.sync_property_data(
+                property_id=property_id,
+                address=property_info['address'],
+                bin_number=property_info.get('bin_number'),
+                bbl=property_info.get('bbl')
+            )
+            
+            return jsonify({
+                'success': result.get('success', False),
+                'message': result.get('message', 'Sync completed'),
+                'data': result
+            })
+        
+        else:
+            return jsonify({'error': f'Sync not yet supported for {city}'}), 400
+        
+    except Exception as e:
+        logger.error(f"Error syncing property data: {e}")
+        return jsonify({'error': f'Sync failed: {str(e)}'}), 500
+
+@app.route('/api/dashboard/overview', methods=['GET'])
+def api_get_dashboard_overview():
+    """Get dashboard overview data"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'user_id is required'}), 400
+        
+        # Get user's properties
+        properties = supabase.table('properties')\
+            .select('*')\
+            .eq('user_id', user_id)\
+            .execute()
+        
+        # Get compliance reports
+        reports = supabase.table('compliance_reports')\
+            .select('*')\
+            .eq('user_id', user_id)\
+            .execute()
+        
+        # Calculate overview metrics
+        total_properties = len(properties.data) if properties.data else 0
+        total_reports = len(reports.data) if reports.data else 0
+        completed_reports = len([r for r in (reports.data or []) if r.get('status') == 'completed'])
+        
+        # Calculate average compliance score
+        avg_compliance_score = 0
+        if reports.data:
+            scores = [r.get('compliance_score', 0) for r in reports.data if r.get('compliance_score')]
+            avg_compliance_score = sum(scores) / len(scores) if scores else 0
+        
+        # Get recent activity
+        recent_reports = sorted(reports.data or [], key=lambda x: x.get('generated_at', ''), reverse=True)[:5]
+        
+        return jsonify({
+            'success': True,
+            'overview': {
+                'total_properties': total_properties,
+                'total_reports': total_reports,
+                'completed_reports': completed_reports,
+                'average_compliance_score': round(avg_compliance_score, 1),
+                'compliance_rate': round((completed_reports / total_reports * 100) if total_reports > 0 else 0, 1)
+            },
+            'recent_activity': recent_reports,
+            'properties': properties.data or []
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching dashboard overview: {e}")
+        return jsonify({'error': f'Failed to fetch dashboard data: {str(e)}'}), 500
 
 # ============================================
 # STRIPE PAYMENT ENDPOINTS
