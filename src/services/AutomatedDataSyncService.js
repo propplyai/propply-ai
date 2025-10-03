@@ -58,16 +58,8 @@ class AutomatedDataSyncService {
       const realNYCData = await NYCDataService.fetchRealNYCData(property);
       
       if (realNYCData) {
-        console.log('✅ Real NYC data fetched successfully');
-        console.log('📊 Real data summary:', {
-          bin: realNYCData.bin,
-          bbl: realNYCData.bbl,
-          hpd_violations: realNYCData.hpd_violations_total || 0,
-          dob_violations: realNYCData.dob_violations_total || 0,
-          elevator_devices: realNYCData.elevator_devices_total || 0,
-          boiler_devices: realNYCData.boiler_devices_total || 0,
-          overall_score: realNYCData.overall_compliance_score || 0
-        });
+        console.log('✅ Real NYC data synced successfully');
+        console.log('📊 Sync results:', realNYCData);
         
         return {
           success: true,
@@ -75,12 +67,12 @@ class AutomatedDataSyncService {
           data: realNYCData
         };
       } else {
-        console.warn('⚠️ No real NYC data found - creating basic record');
+        console.warn('⚠️ No real NYC data synced - creating basic record');
         // Fallback to basic record if no real data found
         const basicRecord = await this.createBasicNYCProperty(property);
         return {
           success: true,
-          message: 'Basic NYC property record created (no real data found)',
+          message: 'Basic NYC property record created (no real data synced)',
           data: basicRecord
         };
       }
