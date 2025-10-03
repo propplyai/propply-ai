@@ -257,16 +257,16 @@ const ReportLibraryPage = ({ user, properties }) => {
                     await generateSampleReport(firstProperty, user.id);
                     
                     console.log('✅ Report generated successfully');
-                    alert('✅ Report generated successfully! Refresh the page to see it.');
+                    window.alert('✅ Report generated successfully! Refresh the page to see it.');
                     
                     // Refresh reports
                     fetchReports();
                   } else {
-                    alert('❌ No properties found. Please add a property first.');
+                    window.alert('❌ No properties found. Please add a property first.');
                   }
                 } catch (error) {
                   console.error('❌ Report generation failed:', error);
-                  alert('❌ Failed to generate report. Please try again.');
+                  window.alert('❌ Failed to generate report. Please try again.');
                 } finally {
                   setLoading(false);
                 }

@@ -239,7 +239,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
           console.log('✅ Sample compliance report generated:', report);
           
           // Show success message to user
-          alert('✅ Property added successfully! A compliance report has been generated and is available in the Report Library.');
+          window.alert('✅ Property added successfully! A compliance report has been generated and is available in the Report Library.');
           
         } catch (reportError) {
           console.error('❌ Report generation failed:', reportError);
@@ -247,15 +247,15 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
           console.error('❌ Full error:', reportError);
           
           // Show user-friendly error message with option to try again
-          const shouldRetry = confirm('⚠️ Property added successfully, but report generation failed. Would you like to try generating the report again?');
+          const shouldRetry = window.confirm('⚠️ Property added successfully, but report generation failed. Would you like to try generating the report again?');
           if (shouldRetry) {
             try {
               console.log('🔄 Retrying report generation...');
               await generateSampleReport(savedProperty, user.id);
-              alert('✅ Report generated successfully on retry!');
+              window.alert('✅ Report generated successfully on retry!');
             } catch (retryError) {
               console.error('❌ Retry also failed:', retryError);
-              alert('❌ Report generation failed again. You can generate a report manually from the property actions.');
+              window.alert('❌ Report generation failed again. You can generate a report manually from the property actions.');
             }
           }
         }
@@ -278,7 +278,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
     } catch (error) {
       console.error('❌ Error adding property:', error);
       // Show user-friendly error message
-      alert(`Failed to save property: ${error.message}`);
+      window.alert(`Failed to save property: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -842,11 +842,11 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                         
                         await generateSampleReport(tempProperty, user.id);
                         console.log('✅ Manual report generation completed');
-                        alert('✅ Report generated successfully! Check the Report Library to view it.');
+                          window.alert('✅ Report generated successfully! Check the Report Library to view it.');
                         
                       } catch (error) {
                         console.error('❌ Manual report generation failed:', error);
-                        alert('❌ Failed to generate report. Please try again.');
+                        window.alert('❌ Failed to generate report. Please try again.');
                       } finally {
                         setLoading(false);
                       }

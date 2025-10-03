@@ -26,11 +26,11 @@ const PropertyActionsModal = ({ property, isOpen, onClose, onViewAnalysis, user 
       console.log('✅ Compliance report generated successfully');
       
       // Show success message
-      alert('Compliance report generated successfully! Check the Report Library to view it.');
+      window.alert('Compliance report generated successfully! Check the Report Library to view it.');
       
     } catch (error) {
       console.error('❌ Error generating report:', error);
-      alert('Failed to generate report. Please try again.');
+      window.alert('Failed to generate report. Please try again.');
     } finally {
       setGeneratingReport(false);
     }
