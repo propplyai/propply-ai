@@ -4,7 +4,7 @@ import realTimeDataService from '../../services/RealTimeDataService';
 import {
   FileText, Download, Eye, Share, Calendar, Building, Filter,
   Search, Plus, BarChart3, TrendingUp, AlertTriangle, CheckCircle,
-  Clock, Archive, Star, Tag
+  Star, Tag
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import ComplianceReportPage from './ComplianceReportPage';
@@ -214,13 +214,6 @@ const ReportLibraryPage = ({ user, properties }) => {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const stats = {
-    total: reports.length,
-    completed: reports.filter(r => r.status === 'completed').length,
-    inProgress: reports.filter(r => r.status === 'in_progress').length,
-    totalDownloads: reports.reduce((sum, r) => sum + r.downloads, 0),
-    totalSize: reports.reduce((sum, r) => sum + parseFloat(r.file_size), 0).toFixed(1)
-  };
 
   // If a report is selected, show the detailed report page
   if (selectedReport) {
@@ -256,39 +249,6 @@ const ReportLibraryPage = ({ user, properties }) => {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        {[
-          { label: 'Total Reports', value: stats.total, icon: FileText, color: 'corporate' },
-          { label: 'Completed', value: stats.completed, icon: CheckCircle, color: 'emerald' },
-          { label: 'In Progress', value: stats.inProgress, icon: Clock, color: 'gold' },
-          { label: 'Downloads', value: stats.totalDownloads, icon: Download, color: 'corporate' },
-          { label: 'Total Size', value: `${stats.totalSize} MB`, icon: Archive, color: 'ruby' }
-        ].map((stat, index) => {
-          const Icon = stat.icon;
-          const colorClasses = {
-            corporate: 'from-corporate-500 to-corporate-600',
-            emerald: 'from-emerald-500 to-emerald-600',
-            ruby: 'from-ruby-500 to-ruby-600',
-            gold: 'from-gold-500 to-gold-600'
-          };
-          return (
-            <div key={index} className="metric-card group">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 bg-gradient-to-r ${colorClasses[stat.color]} rounded-xl shadow-enterprise group-hover:shadow-glow transition-all duration-300`}>
-                  <Icon className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <div className="metric-value text-4xl mb-1">
-                {stat.value}
-              </div>
-              <div className="metric-label">
-                {stat.label}
-              </div>
-            </div>
-          );
-        })}
-      </div>
 
       {/* Filters */}
       <div className="enterprise-card p-6">
