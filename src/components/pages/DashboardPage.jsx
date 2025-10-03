@@ -266,10 +266,6 @@ const DashboardPage = ({ user }) => {
                   
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400">Type</span>
-                      <span className="text-slate-200">{property.property_type}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-400">Units</span>
                       <span className="text-slate-200">{property.units || 'N/A'}</span>
                     </div>

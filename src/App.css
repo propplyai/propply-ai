@@ -632,19 +632,19 @@ textarea:focus-visible {
 
 /* Enterprise Status Indicators */
 .status-excellent {
-  @apply bg-emerald-100 text-emerald-800 border border-emerald-200;
+  @apply bg-green-200 text-green-900 border border-green-300;
 }
 
 .status-good {
-  @apply bg-corporate-100 text-corporate-800 border border-corporate-200;
+  @apply bg-blue-200 text-blue-900 border border-blue-300;
 }
 
 .status-warning {
-  @apply bg-gold-100 text-gold-800 border border-gold-200;
+  @apply bg-yellow-200 text-yellow-900 border border-yellow-300;
 }
 
 .status-danger {
-  @apply bg-ruby-100 text-ruby-800 border border-ruby-200;
+  @apply bg-red-200 text-red-900 border border-red-300;
 }
 
 /* Enterprise Data Visualization */

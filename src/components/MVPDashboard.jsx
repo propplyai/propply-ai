@@ -13,6 +13,7 @@ import ReportLibraryPage from './pages/ReportLibraryPage';
 import TodoGeneratorPage from './pages/TodoGeneratorPage';
 import UserProfile from './UserProfile';
 import PropertyDetailModal from './PropertyDetailModal';
+import PropertyActionsModal from './PropertyActionsModal';
 import { automatedSyncService } from '../services/AutomatedDataSyncService';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -29,6 +30,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
+  const [showActionsModal, setShowActionsModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [newProperty, setNewProperty] = useState({
     address: '',
@@ -107,21 +109,29 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
 
   const fetchPropertyDetails = async (property) => {
     try {
-      console.log(`Opening PropertyDetailModal for ${property.address}`);
+      console.log(`Opening PropertyActionsModal for ${property.address}`);
       
-      // Set the selected property and open the modal
-      setSelectedProperty({
-        id: property.id,
-        address: property.address,
-        bin: property.bin_number,
-        bbl: property.bbl,
-        city: property.city
-      });
-      setShowPropertyModal(true);
+      // Set the selected property and open the actions modal
+      setSelectedProperty(property);
+      setShowActionsModal(true);
       
     } catch (error) {
-      console.error('Error opening property details:', error);
+      console.error('Error opening property actions:', error);
     }
+  };
+
+  const handleViewAnalysis = (property) => {
+    console.log(`Opening PropertyDetailModal for analysis of ${property.address}`);
+    
+    // Set the selected property and open the analysis modal
+    setSelectedProperty({
+      id: property.id,
+      address: property.address,
+      bin: property.bin_number,
+      bbl: property.bbl,
+      city: property.city
+    });
+    setShowPropertyModal(true);
   };
 
   const fetchPropertyDataFromAPI = async (address) => {
@@ -173,6 +183,8 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
     // Now save the property to database
     try {
       setLoading(true);
+      console.log('💾 Saving property to database:', newProperty);
+      
       const { data, error } = await supabase
         .from('properties')
         .insert([{
@@ -189,11 +201,17 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
         }])
         .select('id, address, city, property_type, units, year_built, contact_name, management_company, bin_number, opa_account, user_id, created_at, updated_at');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database error:', error);
+        throw error;
+      }
 
       if (data && data[0]) {
-        const newProperty = data[0];
-        setProperties(prev => [newProperty, ...prev]);
+        const savedProperty = data[0];
+        console.log('✅ Property saved successfully:', savedProperty);
+        
+        // Update properties list
+        setProperties(prev => [savedProperty, ...prev]);
         
         // Reset form and close modal immediately
         setNewProperty({
@@ -212,21 +230,31 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
         console.log('🔄 Triggering automatic data sync for new property...');
         // Use setTimeout to make this non-blocking
         setTimeout(() => {
-          automatedSyncService.autoSyncProperty(newProperty)
-            .then(result => {
-              console.log('✅ Automatic data sync completed:', result);
-              // Optionally refresh the properties list to show updated data
-              fetchProperties();
-            })
-            .catch(error => {
-              console.warn('⚠️ Automatic data sync failed (will retry in background):', error);
-              // Queue for background retry
-              automatedSyncService.queueSync(newProperty);
-            });
+          try {
+            automatedSyncService.autoSyncProperty(savedProperty)
+              .then(result => {
+                console.log('✅ Automatic data sync completed:', result);
+                // Optionally refresh the properties list to show updated data
+                fetchProperties();
+              })
+              .catch(error => {
+                console.warn('⚠️ Automatic data sync failed (will retry in background):', error);
+                // Queue for background retry
+                automatedSyncService.queueSync(savedProperty);
+              });
+          } catch (syncError) {
+            console.warn('⚠️ Automatic data sync service error:', syncError);
+            // Don't let sync errors affect the main flow
+          }
         }, 100);
+      } else {
+        console.error('❌ No data returned from database insert');
+        throw new Error('No data returned from database');
       }
     } catch (error) {
-      console.error('Error adding property:', error);
+      console.error('❌ Error adding property:', error);
+      // Show user-friendly error message
+      alert(`Failed to save property: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -235,8 +263,8 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
   const filteredAndSortedProperties = () => {
     let filtered = properties.filter(property => {
       const matchesSearch = property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           property.property_type?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesFilter = filterType === 'all' || property.property_type === filterType;
+                           property.city?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter = filterType === 'all' || property.city === filterType;
       return matchesSearch && matchesFilter;
     });
 
@@ -557,10 +585,9 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                             onChange={(e) => setFilterType(e.target.value)}
                             className="appearance-none bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-corporate-500 focus:border-corporate-500 transition-all duration-300 text-slate-200 font-medium text-sm hover:bg-slate-700"
                           >
-                            <option value="all">All Property Types</option>
-                            <option value="Residential">Residential</option>
-                            <option value="Commercial">Commercial</option>
-                            <option value="Mixed Use">Mixed Use</option>
+                            <option value="all">All Properties</option>
+                            <option value="NYC">NYC Properties</option>
+                            <option value="Philadelphia">Philadelphia Properties</option>
                           </select>
                           <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                         </div>
@@ -575,7 +602,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                         <input
                           type="text"
-                          placeholder="Search properties by address, type, or status..."
+                          placeholder="Search properties by address or city..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="w-full pl-12 pr-4 py-3 bg-slate-800 border border-slate-600 rounded-xl focus:ring-2 focus:ring-corporate-500 focus:border-corporate-500 transition-all duration-300 text-slate-200 placeholder-slate-400 hover:bg-slate-700"
@@ -596,7 +623,6 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                             </div>
                           </th>
                           <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">City</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Type</th>
                           <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Compliance</th>
                           <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Violations</th>
                           <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
@@ -618,18 +644,9 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                             </td>
                             <td className="px-6 py-4">
                               <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                                property.city === 'NYC' ? 'status-good' : 'status-excellent'
+                                property.city === 'NYC' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                               }`}>
                                 {property.city}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                                property.property_type === 'Residential' ? 'status-excellent' :
-                                property.property_type === 'Commercial' ? 'status-good' :
-                                'status-warning'
-                              }`}>
-                                {property.property_type}
                               </span>
                             </td>
                             <td className="px-6 py-4">
@@ -639,7 +656,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs status-excellent">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-green-100 text-green-800">
                                 0 violations
                               </span>
                             </td>
@@ -947,6 +964,17 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
           </div>
         </div>
       )}
+
+      {/* Property Actions Modal */}
+      <PropertyActionsModal
+        property={selectedProperty}
+        isOpen={showActionsModal}
+        onClose={() => {
+          setShowActionsModal(false);
+          setSelectedProperty(null);
+        }}
+        onViewAnalysis={handleViewAnalysis}
+      />
 
       {/* Property Detail Modal */}
       <PropertyDetailModal
