@@ -227,24 +227,36 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
         setPropertyDataFetched(false);
         setShowAddForm(false);
         
-        // 🚀 AUTOMATION: Trigger automatic data sync and report generation in background (non-blocking)
-        console.log('🔄 Triggering automatic data sync and report generation for new property...');
-        // Use setTimeout to make this non-blocking
+        // 🚀 AUTOMATION: Generate report immediately for better UX
+        console.log('🔄 Generating compliance report for new property...');
+        console.log('📋 Property details:', savedProperty);
+        console.log('👤 User ID:', user.id);
+        
+        // Generate report immediately (synchronous for better UX)
+        try {
+          console.log('🔄 Generating sample report...');
+          const report = await generateSampleReport(savedProperty, user.id);
+          console.log('✅ Sample compliance report generated:', report);
+          
+          // Show success message to user
+          alert('✅ Property added successfully! A compliance report has been generated and is available in the Report Library.');
+          
+        } catch (reportError) {
+          console.error('❌ Report generation failed:', reportError);
+          console.error('❌ Error details:', reportError.message);
+          
+          // Show user-friendly error message
+          alert('⚠️ Property added successfully, but report generation failed. You can generate a report manually from the property actions.');
+        }
+        
+        // Also trigger background sync (non-blocking)
         setTimeout(async () => {
           try {
-            // First, trigger data sync
+            console.log('🔄 Starting background data sync...');
             await automatedSyncService.autoSyncProperty(savedProperty);
-            console.log('✅ Automatic data sync completed');
-            
-            // Then generate a sample report
-            await generateSampleReport(savedProperty, user.id);
-            console.log('✅ Sample compliance report generated');
-            
-            // Refresh the properties list to show updated data
-            fetchProperties();
-          } catch (error) {
-            console.warn('⚠️ Automatic data sync or report generation failed:', error);
-            // Queue for background retry
+            console.log('✅ Background data sync completed');
+          } catch (syncError) {
+            console.warn('⚠️ Background data sync failed:', syncError);
             automatedSyncService.queueSync(savedProperty);
           }
         }, 100);

@@ -12,6 +12,7 @@ export const generateSampleReport = async (property, userId) => {
     const complianceData = {
       property_id: property.id,
       user_id: userId,
+      report_type: 'full_compliance', // Required field
       status: 'completed',
       compliance_score: Math.floor(Math.random() * 30) + 70, // 70-100
       risk_level: Math.random() > 0.7 ? 'HIGH' : Math.random() > 0.4 ? 'MEDIUM' : 'LOW',
