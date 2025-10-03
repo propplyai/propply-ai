@@ -4,7 +4,7 @@
  */
 
 import { supabase, APP_CONFIG } from '../config/supabase';
-import RealNYCDataService from './RealNYCDataService';
+import NYCDataService from './NYCDataService';
 
 class AutomatedDataSyncService {
   constructor() {
@@ -53,9 +53,9 @@ class AutomatedDataSyncService {
     console.log(`🗽 Syncing REAL NYC data for: ${property.address}`);
     
     try {
-      // Use the real NYC data service to fetch actual data from NYC APIs
-      console.log('🔄 Fetching real NYC data using Python compliance system...');
-      const realNYCData = await RealNYCDataService.fetchRealNYCData(property);
+      // Use the NYC data service to fetch actual data from NYC APIs via backend
+      console.log('🔄 Fetching real NYC data using backend API...');
+      const realNYCData = await NYCDataService.fetchRealNYCData(property);
       
       if (realNYCData) {
         console.log('✅ Real NYC data fetched successfully');
