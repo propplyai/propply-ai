@@ -241,7 +241,38 @@ const ReportLibraryPage = ({ user, properties }) => {
                 <span className="text-sm font-medium">Live Updates</span>
               </div>
             )}
-            <button className="btn-primary">
+            <button 
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  console.log('🔄 Manual report generation from Report Library...');
+                  
+                  // Get the first property to generate a report for
+                  if (properties && properties.length > 0) {
+                    const firstProperty = properties[0];
+                    console.log('📋 Using property:', firstProperty);
+                    
+                    // Import the generateSampleReport function
+                    const { generateSampleReport } = await import('../../utils/generateSampleReport');
+                    await generateSampleReport(firstProperty, user.id);
+                    
+                    console.log('✅ Report generated successfully');
+                    alert('✅ Report generated successfully! Refresh the page to see it.');
+                    
+                    // Refresh reports
+                    fetchReports();
+                  } else {
+                    alert('❌ No properties found. Please add a property first.');
+                  }
+                } catch (error) {
+                  console.error('❌ Report generation failed:', error);
+                  alert('❌ Failed to generate report. Please try again.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="btn-primary"
+            >
               <Plus className="h-4 w-4" />
               <span>Generate Report</span>
             </button>

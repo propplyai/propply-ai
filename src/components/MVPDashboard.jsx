@@ -244,9 +244,20 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
         } catch (reportError) {
           console.error('❌ Report generation failed:', reportError);
           console.error('❌ Error details:', reportError.message);
+          console.error('❌ Full error:', reportError);
           
-          // Show user-friendly error message
-          alert('⚠️ Property added successfully, but report generation failed. You can generate a report manually from the property actions.');
+          // Show user-friendly error message with option to try again
+          const shouldRetry = confirm('⚠️ Property added successfully, but report generation failed. Would you like to try generating the report again?');
+          if (shouldRetry) {
+            try {
+              console.log('🔄 Retrying report generation...');
+              await generateSampleReport(savedProperty, user.id);
+              alert('✅ Report generated successfully on retry!');
+            } catch (retryError) {
+              console.error('❌ Retry also failed:', retryError);
+              alert('❌ Report generation failed again. You can generate a report manually from the property actions.');
+            }
+          }
         }
         
         // Also trigger background sync (non-blocking)
@@ -811,6 +822,42 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                     </>
                   )}
                 </button>
+                
+                {/* Generate Report Button - Only show after property data is fetched */}
+                {propertyDataFetched && !loading && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        setLoading(true);
+                        console.log('🔄 Manually generating report for property...');
+                        
+                        // Create a temporary property object for report generation
+                        const tempProperty = {
+                          id: 'temp-' + Date.now(), // Temporary ID
+                          address: newProperty.address,
+                          city: newProperty.city,
+                          type: newProperty.type
+                        };
+                        
+                        await generateSampleReport(tempProperty, user.id);
+                        console.log('✅ Manual report generation completed');
+                        alert('✅ Report generated successfully! Check the Report Library to view it.');
+                        
+                      } catch (error) {
+                        console.error('❌ Manual report generation failed:', error);
+                        alert('❌ Failed to generate report. Please try again.');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className="btn-secondary flex items-center justify-center space-x-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span>Generate Report</span>
+                  </button>
+                )}
+                
                 <button
                   type="button"
                   onClick={() => {
