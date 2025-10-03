@@ -194,21 +194,31 @@ def add_property_post():
                 
                 # Insert property into database
                 supabase.table('properties').insert(property_record).execute()
-                
-                # Generate compliance report
-                report_response = requests.post('http://localhost:5000/api/generate-compliance-report', 
-                    json={
-                        'property_id': property_id,
-                        'user_id': data.get('user_id', 'anonymous')
-                    },
-                    timeout=300  # 5 minute timeout for report generation
-                )
-                
-                if report_response.status_code == 200:
-                    report_data = report_response.json()
-                    print(f"✅ Compliance report generated: {report_data.get('report_id')}")
+                print(f"✅ Property saved to database: {property_id}")
+
+                # Auto-sync NYC data to Supabase
+                if nyc_sync_service:
+                    print(f"🔄 Starting automatic NYC data sync for {address}")
+                    try:
+                        sync_result = nyc_sync_service.sync_property_data(
+                            property_id=property_id,
+                            address=address,
+                            bin_number=property_data['nyc_data'].get('bin'),
+                            bbl=None  # Will be fetched by sync service
+                        )
+
+                        if sync_result.get('success'):
+                            print(f"✅ NYC data synced successfully")
+                            print(f"   - HPD Violations: {sync_result.get('hpd_violations', 0)}")
+                            print(f"   - DOB Violations: {sync_result.get('dob_violations', 0)}")
+                            print(f"   - Boiler Inspections: {sync_result.get('boiler_inspections', 0)}")
+                            print(f"   - Elevator Inspections: {sync_result.get('elevator_inspections', 0)}")
+                        else:
+                            print(f"⚠️ NYC data sync failed: {sync_result.get('message')}")
+                    except Exception as sync_error:
+                        print(f"⚠️ NYC data sync error: {sync_error}")
                 else:
-                    print(f"⚠️ Report generation failed: {report_response.text}")
+                    print(f"⚠️ NYC Sync Service not available - skipping auto-sync")
                     
         except Exception as e:
             print(f"⚠️ Background report generation failed: {e}")
@@ -216,10 +226,10 @@ def add_property_post():
         
         return jsonify({
             'success': True,
-            'message': 'Property added successfully!',
+            'message': 'Property added successfully! NYC data sync completed.',
             'property_id': property_id,
             'data': property_data,
-            'report_generation': 'triggered'
+            'data_sync': 'completed' if nyc_sync_service else 'unavailable'
         })
         
     except Exception as e:
