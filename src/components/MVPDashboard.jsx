@@ -16,6 +16,7 @@ import PropertyDetailModal from './PropertyDetailModal';
 import PropertyActionsModal from './PropertyActionsModal';
 import { automatedSyncService } from '../services/AutomatedDataSyncService';
 import { useTheme } from '../contexts/ThemeContext';
+import { generateSampleReport } from '../utils/generateSampleReport';
 
 const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
   const { theme, toggleTheme, isDark } = useTheme();
@@ -226,25 +227,25 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
         setPropertyDataFetched(false);
         setShowAddForm(false);
         
-        // 🚀 AUTOMATION: Trigger automatic data sync in background (non-blocking)
-        console.log('🔄 Triggering automatic data sync for new property...');
+        // 🚀 AUTOMATION: Trigger automatic data sync and report generation in background (non-blocking)
+        console.log('🔄 Triggering automatic data sync and report generation for new property...');
         // Use setTimeout to make this non-blocking
-        setTimeout(() => {
+        setTimeout(async () => {
           try {
-            automatedSyncService.autoSyncProperty(savedProperty)
-              .then(result => {
-                console.log('✅ Automatic data sync completed:', result);
-                // Optionally refresh the properties list to show updated data
-                fetchProperties();
-              })
-              .catch(error => {
-                console.warn('⚠️ Automatic data sync failed (will retry in background):', error);
-                // Queue for background retry
-                automatedSyncService.queueSync(savedProperty);
-              });
-          } catch (syncError) {
-            console.warn('⚠️ Automatic data sync service error:', syncError);
-            // Don't let sync errors affect the main flow
+            // First, trigger data sync
+            await automatedSyncService.autoSyncProperty(savedProperty);
+            console.log('✅ Automatic data sync completed');
+            
+            // Then generate a sample report
+            await generateSampleReport(savedProperty, user.id);
+            console.log('✅ Sample compliance report generated');
+            
+            // Refresh the properties list to show updated data
+            fetchProperties();
+          } catch (error) {
+            console.warn('⚠️ Automatic data sync or report generation failed:', error);
+            // Queue for background retry
+            automatedSyncService.queueSync(savedProperty);
           }
         }, 100);
       } else {
@@ -974,6 +975,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
           setSelectedProperty(null);
         }}
         onViewAnalysis={handleViewAnalysis}
+        user={user}
       />
 
       {/* Property Detail Modal */}

@@ -4,15 +4,36 @@ import {
   FileText, Settings, RefreshCw, Eye, BarChart3, Users, 
   Shield, Wrench, Home, TrendingUp, Clock, Star
 } from 'lucide-react';
+import { generateSampleReport } from '../utils/generateSampleReport';
 
-const PropertyActionsModal = ({ property, isOpen, onClose, onViewAnalysis }) => {
+const PropertyActionsModal = ({ property, isOpen, onClose, onViewAnalysis, user }) => {
   const [loading, setLoading] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   if (!isOpen) return null;
 
   const handleViewAnalysis = () => {
     onViewAnalysis(property);
     onClose();
+  };
+
+  const handleGenerateReport = async () => {
+    try {
+      setGeneratingReport(true);
+      console.log('📊 Generating compliance report for:', property.address);
+      
+      await generateSampleReport(property, user.id);
+      console.log('✅ Compliance report generated successfully');
+      
+      // Show success message
+      alert('Compliance report generated successfully! Check the Report Library to view it.');
+      
+    } catch (error) {
+      console.error('❌ Error generating report:', error);
+      alert('Failed to generate report. Please try again.');
+    } finally {
+      setGeneratingReport(false);
+    }
   };
 
   return (
@@ -112,7 +133,8 @@ const PropertyActionsModal = ({ property, isOpen, onClose, onViewAnalysis }) => 
             </div>
 
             {/* Reports & Documents */}
-            <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 cursor-pointer group">
+            <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                 onClick={handleGenerateReport}>
               <div className="flex items-center justify-between mb-4">
                 <div className="p-3 bg-purple-100 rounded-xl group-hover:bg-purple-200 transition-colors">
                   <FileText className="h-6 w-6 text-purple-600" />
@@ -122,8 +144,17 @@ const PropertyActionsModal = ({ property, isOpen, onClose, onViewAnalysis }) => 
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Reports & Documents</h3>
               <p className="text-sm text-gray-600 mb-4">Generate compliance reports and manage property documents</p>
               <div className="flex items-center text-sm text-purple-600 font-medium">
-                <FileText className="h-4 w-4 mr-2" />
-                Generate
+                {generatingReport ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate
+                  </>
+                )}
               </div>
             </div>
 
