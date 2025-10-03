@@ -4,6 +4,7 @@
  */
 
 import { supabase, APP_CONFIG } from '../config/supabase';
+import RealNYCDataService from './RealNYCDataService';
 
 class AutomatedDataSyncService {
   constructor() {
@@ -49,51 +50,49 @@ class AutomatedDataSyncService {
    * Sync NYC compliance data for a property
    */
   async syncNYCProperty(property) {
-    console.log(`🗽 Syncing NYC data for: ${property.address}`);
+    console.log(`🗽 Syncing REAL NYC data for: ${property.address}`);
     
     try {
-      // First, create basic NYC property record
-      const nycProperty = await this.createBasicNYCProperty(property);
-      console.log('✅ Basic NYC property record created:', nycProperty.id);
+      // Use the real NYC data service to fetch actual data from NYC APIs
+      console.log('🔄 Fetching real NYC data using Python compliance system...');
+      const realNYCData = await RealNYCDataService.fetchRealNYCData(property);
       
-      // Then trigger comprehensive data sync to database
-      console.log('🔄 Triggering comprehensive NYC data sync to database...');
-      const syncResult = await this.fetchNYCComplianceData(property, nycProperty);
-      
-      if (syncResult && syncResult.success) {
-        console.log('✅ NYC data sync completed successfully');
-        console.log('📊 Sync summary:', {
-          violations: syncResult.data?.data_sources?.violations || 'No data',
-          elevators: syncResult.data?.data_sources?.elevator_inspections || 'No data',
-          boilers: syncResult.data?.data_sources?.boiler_inspections || 'No data',
-          complaints: syncResult.data?.data_sources?.complaints || 'No data'
+      if (realNYCData) {
+        console.log('✅ Real NYC data fetched successfully');
+        console.log('📊 Real data summary:', {
+          bin: realNYCData.bin,
+          bbl: realNYCData.bbl,
+          hpd_violations: realNYCData.hpd_violations_total || 0,
+          dob_violations: realNYCData.dob_violations_total || 0,
+          elevator_devices: realNYCData.elevator_devices_total || 0,
+          boiler_devices: realNYCData.boiler_devices_total || 0,
+          overall_score: realNYCData.overall_compliance_score || 0
         });
         
         return {
           success: true,
-          message: 'NYC compliance data synced successfully to database',
-          data: {
-            nycProperty,
-            syncResult
-          }
+          message: 'Real NYC compliance data synced successfully',
+          data: realNYCData
         };
       } else {
-        console.warn('⚠️ NYC sync completed with warnings, but basic record created');
+        console.warn('⚠️ No real NYC data found - creating basic record');
+        // Fallback to basic record if no real data found
+        const basicRecord = await this.createBasicNYCProperty(property);
         return {
           success: true,
-          message: 'Basic NYC property record created, detailed sync had issues',
-          data: nycProperty
+          message: 'Basic NYC property record created (no real data found)',
+          data: basicRecord
         };
       }
       
     } catch (error) {
-      console.error('❌ NYC sync failed:', error);
-      // Still create basic record even if detailed sync fails
+      console.error('❌ Real NYC data sync failed:', error);
+      // Fallback to basic record
       try {
         const basicRecord = await this.createBasicNYCProperty(property);
         return { 
           success: true, 
-          message: 'Basic NYC property record created (detailed sync failed)',
+          message: 'Basic NYC property record created (real data sync failed)',
           data: basicRecord
         };
       } catch (fallbackError) {
