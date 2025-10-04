@@ -1448,18 +1448,48 @@ def api_generate_compliance_report():
         logger.error(f"Error generating compliance report: {e}")
         return jsonify({'error': f'Compliance report generation failed: {str(e)}'}), 500
 
+def save_standalone_compliance_report(property_id, compliance_data):
+    """Save standalone compliance report directly to compliance_reports table (bypassing RLS)"""
+    try:
+        # Prepare standalone report data
+        report_data = {
+            'id': str(uuid.uuid4()),
+            'property_id': property_id,
+            'user_id': 'a54bbfc2-5435-4c2a-b061-788234cb5e43',  # Default test user
+            'report_type': 'full_compliance',
+            'status': 'completed',
+            'compliance_score': compliance_data.get('overall_compliance_score', 0),
+            'risk_level': get_risk_level(compliance_data.get('overall_compliance_score', 0)),
+            'ai_analysis': json.dumps(compliance_data),
+            'generated_at': compliance_data.get('processed_at', datetime.now().isoformat()),
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Try to insert directly (this will work if RLS allows or if using service role key)
+        result = supabase.table('compliance_reports').insert([report_data]).execute()
+        logger.info(f"✅ Saved standalone compliance report: {report_data['id']}")
+        return result.data[0] if result.data else None
+    except Exception as e:
+        logger.error(f"Error saving standalone report: {e}")
+        return None
+
 def save_compliance_data_to_db(property_id, compliance_data):
     """Save compliance data to Supabase database"""
     try:
         # Check if property exists in properties table first
-        property_exists = supabase.table('properties')\
-            .select('id')\
-            .eq('id', property_id)\
-            .execute()
-        
-        if not property_exists.data:
-            logger.warning(f"Property {property_id} not found in properties table, skipping database save")
-            return
+        try:
+            property_exists = supabase.table('properties')\
+                .select('id')\
+                .eq('id', property_id)\
+                .execute()
+            
+            if not property_exists.data:
+                logger.warning(f"Property {property_id} not found in properties table, saving as standalone report")
+                # Save as standalone report without property reference
+                return save_standalone_compliance_report(property_id, compliance_data)
+        except Exception as prop_check_error:
+            logger.warning(f"Could not check property existence: {prop_check_error}, saving as standalone report")
+            return save_standalone_compliance_report(property_id, compliance_data)
         
         # First, get or create the NYC property record
         nyc_property_result = supabase.table('nyc_properties')\

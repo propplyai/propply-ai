@@ -52,7 +52,8 @@ const ReportLibraryPage = ({ user, properties }) => {
       setLoading(true);
       
       // Fetch reports from backend API
-      const response = await fetch(`/api/compliance-reports?user_id=${user.id}`);
+      const apiUrl = process.env.REACT_APP_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/compliance-reports?user_id=${user.id}`);
       const result = await response.json();
       
       if (!result.success) {

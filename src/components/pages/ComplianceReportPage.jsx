@@ -98,7 +98,8 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
       setLoading(true);
       
       // Fetch report from backend API
-      const response = await fetch(`/api/compliance-reports/${reportId}`);
+      const apiUrl = process.env.REACT_APP_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/compliance-reports/${reportId}`);
       const result = await response.json();
       
       if (!result.success) {
@@ -253,9 +254,17 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
     );
   }
 
+  // Parse the detailed compliance data from the API response
   const complianceData = report.ai_analysis || {};
   const violations = complianceData.violations || {};
   const equipment = complianceData.equipment || {};
+  
+  // Parse detailed data from the API response if available
+  const hpdViolationsData = report.hpd_violations_data ? JSON.parse(report.hpd_violations_data) : [];
+  const dobViolationsData = report.dob_violations_data ? JSON.parse(report.dob_violations_data) : [];
+  const elevatorData = report.elevator_data ? JSON.parse(report.elevator_data) : [];
+  const boilerData = report.boiler_data ? JSON.parse(report.boiler_data) : [];
+  const electricalData = report.electrical_data ? JSON.parse(report.electrical_data) : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -348,7 +357,7 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                     <span className="text-sm text-gray-600">Total Violations</span>
                   </div>
                   <div className="text-3xl font-bold text-gray-900">
-                    {violations.total || 0}
+                    {(report.hpd_violations_total || 0) + (report.dob_violations_total || 0)}
                   </div>
                 </div>
 
@@ -358,7 +367,50 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                     <span className="text-sm text-gray-600">Risk Level</span>
                   </div>
                   <div className={`text-3xl font-bold ${getRiskColor(report.risk_level).text}`}>
-                    {report.risk_level}
+                    {report.risk_level || 'MEDIUM'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed Compliance Scores */}
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <div className="bg-blue-50 p-4 rounded-xl">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Home className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm text-gray-600">HPD Score</span>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {report.hpd_compliance_score || 0}%
+                  </div>
+                </div>
+
+                <div className="bg-red-50 p-4 rounded-xl">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <span className="text-sm text-gray-600">DOB Score</span>
+                  </div>
+                  <div className="text-2xl font-bold text-red-600">
+                    {report.dob_compliance_score || 0}%
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-xl">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Building className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm text-gray-600">Elevator Score</span>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {report.elevator_compliance_score || 0}%
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 p-4 rounded-xl">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Wrench className="h-5 w-5 text-yellow-600" />
+                    <span className="text-sm text-gray-600">Electrical Score</span>
+                  </div>
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {report.electrical_compliance_score || 0}%
                   </div>
                 </div>
               </div>
@@ -419,10 +471,36 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
               </div>
             </div>
 
-            {/* Detailed Compliance Analysis */}
+            {/* Property Summary */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-100">
               <div className="flex items-center space-x-2 mb-4">
                 <FileText className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-bold text-gray-900">Property Summary</h3>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="bg-white p-3 rounded-lg">
+                  <div className="text-gray-600">BIN</div>
+                  <div className="font-bold">{report.bin || 'N/A'}</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <div className="text-gray-600">BBL</div>
+                  <div className="font-bold">{report.bbl || 'N/A'}</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <div className="text-gray-600">Borough</div>
+                  <div className="font-bold">{report.borough || 'N/A'}</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <div className="text-gray-600">Zip Code</div>
+                  <div className="font-bold">{report.zip_code || 'N/A'}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed Compliance Analysis */}
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 border-2 border-green-100">
+              <div className="flex items-center space-x-2 mb-4">
+                <FileText className="h-5 w-5 text-green-600" />
                 <h3 className="text-lg font-bold text-gray-900">Detailed Compliance Analysis</h3>
               </div>
               <p className="text-gray-600 text-sm">Click on any category to view detailed information</p>
@@ -441,7 +519,7 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                   <div className="text-left">
                     <h4 className="font-bold text-gray-900">HPD Violations</h4>
                     <p className="text-sm text-gray-600">
-                      {violations.hpd?.length || 0} total, {violations.hpd?.filter(v => v.violation_status === 'OPEN').length || 0} open
+                      {report.hpd_violations_total || 0} total, {report.hpd_violations_active || 0} active
                     </p>
                   </div>
                 </div>
@@ -453,9 +531,9 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
 
               {expandedSections.hpdViolations && (
                 <div className="bg-gray-50 p-6 border-t-2 border-gray-200">
-                  {violations.hpd && violations.hpd.length > 0 ? (
+                  {hpdViolationsData && hpdViolationsData.length > 0 ? (
                     <div className="space-y-3">
-                      {violations.hpd.slice(0, 10).map((violation, idx) => (
+                      {hpdViolationsData.slice(0, 10).map((violation, idx) => (
                         <div key={idx} className="bg-white p-4 rounded-lg border border-purple-100">
                           <div className="flex items-start justify-between mb-2">
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -463,21 +541,23 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                               violation.violation_class === 'B' ? 'bg-yellow-100 text-yellow-800' :
                               'bg-blue-100 text-blue-800'
                             }`}>
-                              Class {violation.violation_class}
+                              Class {violation.violation_class || 'N/A'}
                             </span>
-                            <span className="text-xs text-gray-500">{violation.inspection_date}</span>
+                            <span className="text-xs text-gray-500">{violation.inspection_date || 'N/A'}</span>
                           </div>
                           <div className="text-sm text-gray-700">
-                            Status: {violation.violation_status}
+                            Status: {violation.violation_status || 'N/A'}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            ID: {violation.violation_id}
+                            ID: {violation.violation_id || 'N/A'}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">No HPD violations found</div>
+                    <div className="text-center py-8 text-gray-500">
+                      {report.hpd_violations_total === 0 ? 'No HPD violations found' : 'HPD violation details not available'}
+                    </div>
                   )}
                 </div>
               )}
@@ -496,7 +576,7 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                   <div className="text-left">
                     <h4 className="font-bold text-gray-900">DOB Violations</h4>
                     <p className="text-sm text-gray-600">
-                      {violations.dob?.length || 0} total, {violations.dob?.filter(v => v.status === 'ACTIVE').length || 0} active
+                      {report.dob_violations_total || 0} total, {report.dob_violations_active || 0} active
                     </p>
                   </div>
                 </div>
@@ -508,9 +588,9 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
 
               {expandedSections.dobViolations && (
                 <div className="bg-gray-50 p-6 border-t-2 border-gray-200">
-                  {violations.dob && violations.dob.length > 0 ? (
+                  {dobViolationsData && dobViolationsData.length > 0 ? (
                     <div className="space-y-3">
-                      {violations.dob.slice(0, 10).map((violation, idx) => (
+                      {dobViolationsData.slice(0, 10).map((violation, idx) => (
                         <div key={idx} className="bg-white p-4 rounded-lg border border-red-100">
                           <div className="flex items-start justify-between mb-2">
                             <div>
@@ -522,19 +602,24 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                                 {violation.violation_category || 'GENERAL'}
                               </span>
                             </div>
-                            <span className="text-xs text-gray-500">{violation.issue_date}</span>
+                            <span className="text-xs text-gray-500">{violation.issue_date || 'N/A'}</span>
                           </div>
                           <div className="text-sm font-medium text-gray-900 mb-1">
-                            {violation.violation_type}
+                            {violation.violation_type || 'N/A'}
                           </div>
                           <div className="text-xs text-gray-600">
-                            ID: {violation.violation_id}
+                            ID: {violation.violation_number || 'N/A'}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Status: {violation.status || 'N/A'}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">No DOB violations found</div>
+                    <div className="text-center py-8 text-gray-500">
+                      {report.dob_violations_total === 0 ? 'No DOB violations found' : 'DOB violation details not available'}
+                    </div>
                   )}
                 </div>
               )}
@@ -553,7 +638,7 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                   <div className="text-left">
                     <h4 className="font-bold text-gray-900">Elevator Equipment</h4>
                     <p className="text-sm text-gray-600">
-                      {equipment.elevators?.length || 0} total, {equipment.elevators?.filter(e => e.device_status === 'ACTIVE').length || 0} active
+                      {report.elevator_devices_total || 0} total, {report.elevator_devices_active || 0} active
                     </p>
                   </div>
                 </div>
@@ -565,37 +650,39 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
 
               {expandedSections.elevatorEquipment && (
                 <div className="bg-gray-50 p-6 border-t-2 border-gray-200">
-                  {equipment.elevators && equipment.elevators.length > 0 ? (
+                  {elevatorData && elevatorData.length > 0 ? (
                     <div className="space-y-3">
                       <div className="grid grid-cols-4 gap-4 px-4 py-2 bg-white rounded-lg font-semibold text-sm text-gray-700">
-                        <div>Device ID & Count</div>
+                        <div>Device ID</div>
                         <div>Latest Inspection</div>
                         <div>Status</div>
-                        <div>Defects</div>
+                        <div>Type</div>
                       </div>
-                      {equipment.elevators.slice(0, 10).map((elevator, idx) => (
+                      {elevatorData.slice(0, 10).map((elevator, idx) => (
                         <div key={idx} className="grid grid-cols-4 gap-4 px-4 py-3 bg-white rounded-lg hover:bg-blue-50 transition-colors">
                           <div>
-                            <div className="font-bold text-gray-900">{elevator.device_number}</div>
-                            <div className="text-xs text-gray-500">{elevator.device_type || 'Elevator'}</div>
+                            <div className="font-bold text-gray-900">{elevator.device_id}</div>
+                            <div className="text-xs text-gray-500">{elevator.device_name}</div>
                           </div>
-                          <div className="text-gray-700">{elevator.last_inspection_date || 'N/A'}</div>
+                          <div className="text-gray-700">{elevator.latest_inspection_date || 'N/A'}</div>
                           <div>
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              elevator.device_status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                              elevator.device_status === 'Active' ? 'bg-green-100 text-green-800' : 
+                              elevator.device_status === 'Removed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
                             }`}>
                               {elevator.device_status || 'UNKNOWN'}
                             </span>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm font-medium text-green-600">No</span>
+                          <div className="text-sm text-gray-600">
+                            {elevator.device_type || 'Elevator'}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">No elevator data available</div>
+                    <div className="text-center py-8 text-gray-500">
+                      {report.elevator_devices_total === 0 ? 'No elevator data available' : 'Elevator details not available'}
+                    </div>
                   )}
                 </div>
               )}
@@ -614,7 +701,7 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                   <div className="text-left">
                     <h4 className="font-bold text-gray-900">Boiler Equipment</h4>
                     <p className="text-sm text-gray-600">
-                      {equipment.boilers?.length || 0} total, {equipment.boilers?.filter(b => b.status === 'ACTIVE').length || 0} active
+                      {report.boiler_devices_total || 0} total, {report.boiler_devices_total || 0} active
                     </p>
                   </div>
                 </div>
@@ -626,34 +713,41 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
 
               {expandedSections.boilerEquipment && (
                 <div className="bg-gray-50 p-6 border-t-2 border-gray-200">
-                  {equipment.boilers && equipment.boilers.length > 0 ? (
+                  {boilerData && boilerData.length > 0 ? (
                     <div className="space-y-3">
                       <div className="grid grid-cols-4 gap-4 px-4 py-2 bg-white rounded-lg font-semibold text-sm text-gray-700">
                         <div>Device ID</div>
-                        <div>Inspection Date</div>
+                        <div>Latest Inspection</div>
                         <div>Status</div>
                         <div>Defects</div>
                       </div>
-                      {equipment.boilers.slice(0, 10).map((boiler, idx) => (
+                      {boilerData.slice(0, 10).map((boiler, idx) => (
                         <div key={idx} className="grid grid-cols-4 gap-4 px-4 py-3 bg-white rounded-lg hover:bg-orange-50 transition-colors">
-                          <div className="font-bold text-gray-900">{boiler.device_number}</div>
-                          <div className="text-gray-700">{boiler.inspection_date || 'N/A'}</div>
+                          <div>
+                            <div className="font-bold text-gray-900">{boiler.device_id}</div>
+                            <div className="text-xs text-gray-500">{boiler.device_name}</div>
+                          </div>
+                          <div className="text-gray-700">{boiler.latest_inspection_date || 'N/A'}</div>
                           <div>
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              boiler.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                              boiler.device_status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                             }`}>
-                              {boiler.status || 'UNKNOWN'}
+                              {boiler.device_status || 'UNKNOWN'}
                             </span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <CheckCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm font-medium text-green-600">No</span>
+                            <span className="text-sm font-medium text-green-600">
+                              {boiler.defects_exist === 'No' ? 'No' : 'Yes'}
+                            </span>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">No boiler data available</div>
+                    <div className="text-center py-8 text-gray-500">
+                      {report.boiler_devices_total === 0 ? 'No boiler data available' : 'Boiler details not available'}
+                    </div>
                   )}
                 </div>
               )}
@@ -672,7 +766,7 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                   <div className="text-left">
                     <h4 className="font-bold text-gray-900">Electrical Permits</h4>
                     <p className="text-sm text-gray-600">
-                      {equipment.electrical?.length || 0} total, {equipment.electrical?.filter(e => e.filing_status === 'ACTIVE').length || 0} active
+                      {report.electrical_permits_total || 0} total, {report.electrical_permits_active || 0} active
                     </p>
                   </div>
                 </div>
@@ -684,7 +778,7 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
 
               {expandedSections.electricalPermits && (
                 <div className="bg-gray-50 p-6 border-t-2 border-gray-200">
-                  {equipment.electrical && equipment.electrical.length > 0 ? (
+                  {electricalData && electricalData.length > 0 ? (
                     <div className="space-y-3">
                       <div className="grid grid-cols-4 gap-4 px-4 py-2 bg-white rounded-lg font-semibold text-sm text-gray-700">
                         <div>Filing Number</div>
@@ -692,13 +786,15 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                         <div>Status</div>
                         <div>Job Description</div>
                       </div>
-                      {equipment.electrical.slice(0, 10).map((permit, idx) => (
+                      {electricalData.slice(0, 10).map((permit, idx) => (
                         <div key={idx} className="grid grid-cols-4 gap-4 px-4 py-3 bg-white rounded-lg hover:bg-yellow-50 transition-colors">
-                          <div className="font-bold text-gray-900">{permit.filing_number}</div>
+                          <div className="font-bold text-gray-900">{permit.filing_number || 'N/A'}</div>
                           <div className="text-gray-700">{permit.filing_date || 'N/A'}</div>
                           <div>
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              permit.filing_status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                              permit.filing_status === 'Complete' ? 'bg-green-100 text-green-800' : 
+                              permit.filing_status === 'Permit Issued' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
                             }`}>
                               {permit.filing_status || 'UNKNOWN'}
                             </span>
@@ -710,7 +806,9 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">No electrical permit data available</div>
+                    <div className="text-center py-8 text-gray-500">
+                      {report.electrical_permits_total === 0 ? 'No electrical permit data available' : 'Electrical permit details not available'}
+                    </div>
                   )}
                 </div>
               )}
