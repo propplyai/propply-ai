@@ -1,38 +1,14 @@
-# Propply AI MVP Environment Configuration
-# Copy this content to a file named .env.local in your project root
-
-# Supabase Configuration (Required)
-REACT_APP_SUPABASE_URL=https://squmtocfnsgqadkqpbxl.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxdW10b2NmbnNncWFka3FwYnhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1Njc0MDYsImV4cCI6MjA3MzE0MzQwNn0.95Z8JVu40tjXwVFL8kitCmG6ZG0RTi-b2qYbq5-XFGk
-
-# Alternative Supabase keys for backend services
-SUPABASE_URL=https://squmtocfnsgqadkqpbxl.supabase.co
-SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxdW10b2NmbnNncWFka3FwYnhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1Njc0MDYsImV4cCI6MjA3MzE0MzQwNn0.95Z8JVu40tjXwVFL8kitCmG6ZG0RTi-b2qYbq5-XFGk
-
-# AI Workflow Configuration (Required for n8n webhook workflow)
-# Replace with your actual n8n webhook URL
-N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/ai-analysis
-APP_BASE_URL=http://localhost:5002
-
-# API Tokens for Higher Rate Limits (Optional but recommended)
-# Get these from NYC Open Data and OpenDataPhilly
-NYC_APP_TOKEN=your_nyc_open_data_app_token_here
-PHILLY_APP_TOKEN=your_philadelphia_app_token_here
-
-# Vendor Marketplace (Optional)
-APIFY_TOKEN=your_apify_token_here
-
-# Stripe Configuration (Optional - for payments)
-REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key_here
-REACT_APP_STRIPE_PRICE_ID_SINGLE_REPORT=price_single_report_here
-REACT_APP_STRIPE_PRICE_ID_ENTERPRISE_MONTHLY=price_enterprise_monthly_here
-REACT_APP_STRIPE_PRICE_ID_ENTERPRISE_YEARLY=price_enterprise_yearly_here
-
-# App Configuration
-REACT_APP_APP_NAME=Propply AI
-REACT_APP_APP_VERSION=1.0.0
-REACT_APP_SUPPORTED_CITIES=NYC,Philadelphia
-
-# Flask Configuration
-FLASK_ENV=development
-FLASK_DEBUG=True
+API_KEY_ID=1qbkti8iywuiu2kiuddln3oa8
+API_KEY_SECRET=5tcwowe7jan06ecsjr4rum67ks1xm3elcw4jnuce87h77w6inh
+CI=false
+FLASK_DEBUG=False
+FLASK_ENV=production
+GENERATE_SOURCEMAP=false
+NODE_ENV=production
+NYC_APP_TOKEN=5tcwowe7jan06ecsjr4rum67ks1xm3elcw4jnuce87h77w6inh
+REACT_APP_API_URL=https://agent4nyc.onrender.com
+REACT_APP_GOOGLE_MAPS_API_KEY=AIzaSyA4gSJ9LDVqQ9AVxw3zVoHSQQVr_9W2V54
+REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbm52eGxnemh0YW9ycGl4c2F5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyMTE1NjgsImV4cCI6MjA3NDc4NzU2OH0.yGC82Qop5M_CSA48nXpwC15HxrqqW7CugFIb-17nxG0
+REACT_APP_SUPABASE_URL=https://vlnnvxlgzhtaorpixsay.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbm52eGxnemh0YW9ycGl4c2F5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyMTE1NjgsImV4cCI6MjA3NDc4NzU2OH0.yGC82Qop5M_CSA48nXpwC15HxrqqW7CugFIb-17nxG0
+SUPABASE_URL=https://vlnnvxlgzhtaorpixsay.supabase.co

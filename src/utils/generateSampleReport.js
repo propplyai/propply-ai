@@ -57,46 +57,105 @@ export const generateSampleReport = async (property, userId) => {
             complianceScore = Math.round(complianceSummary.overall_compliance_score || complianceScore);
             riskLevel = complianceSummary.risk_level || riskLevel;
             
-            // Parse real violations data
+            // Get real violations data from separate tables
             try {
-              const hpdViolations = JSON.parse(complianceSummary.hpd_violations_data || '[]');
-              const dobViolations = JSON.parse(complianceSummary.dob_violations_data || '[]');
+              // Get HPD violations
+              const { data: hpdViolations } = await supabase
+                .from('nyc_hpd_violations')
+                .select('*')
+                .eq('nyc_property_id', nycProperty.id)
+                .limit(10);
+
+              // Get DOB violations  
+              const { data: dobViolations } = await supabase
+                .from('nyc_dob_violations')
+                .select('*')
+                .eq('nyc_property_id', nycProperty.id)
+                .limit(10);
+
+              // Get elevator devices
+              const { data: elevatorDevices } = await supabase
+                .from('nyc_elevator_inspections')
+                .select('*')
+                .eq('nyc_property_id', nycProperty.id)
+                .limit(10);
+
+              // Get boiler devices
+              const { data: boilerDevices } = await supabase
+                .from('nyc_boiler_inspections')
+                .select('*')
+                .eq('nyc_property_id', nycProperty.id)
+                .limit(10);
               
               violations = {
-                hpd: hpdViolations.slice(0, 5).map(v => ({
-                  id: v.violation_id || v.violationid,
-                  type: v.violation_class || v.class,
-                  status: v.violation_status || v.violationstatus,
-                  date: v.inspection_date || v.inspectiondate,
-                  description: v.violation_description || v.novdescription
+                hpd: (hpdViolations || []).map(v => ({
+                  id: v.violation_id,
+                  type: v.violation_class,
+                  status: v.violation_status,
+                  date: v.inspection_date,
+                  description: v.violation_description,
+                  apartment: v.apartment,
+                  story: v.story
                 })),
-                dob: dobViolations.slice(0, 5).map(v => ({
+                dob: (dobViolations || []).map(v => ({
                   id: v.violation_id,
                   type: v.violation_type,
                   status: v.violation_status,
                   date: v.issue_date,
-                  description: v.violation_description
+                  description: v.violation_description,
+                  category: v.violation_category
+                }))
+              };
+
+              // Create equipment data
+              const equipment = {
+                elevators: (elevatorDevices || []).map(e => ({
+                  device_number: e.device_number,
+                  device_type: e.device_type,
+                  status: e.device_status,
+                  last_inspection: e.last_inspection_date,
+                  result: e.inspection_result,
+                  next_inspection: e.next_inspection_date
+                })),
+                boilers: (boilerDevices || []).map(b => ({
+                  device_number: b.device_number,
+                  boiler_type: b.boiler_type,
+                  last_inspection: b.inspection_date,
+                  result: b.inspection_result,
+                  next_inspection: b.next_inspection_date
                 }))
               };
               
               // Update AI analysis with real data
+              const totalViolations = (hpdViolations?.length || 0) + (dobViolations?.length || 0);
+              const openViolations = (hpdViolations?.filter(v => v.violation_status === 'OPEN').length || 0) + 
+                                   (dobViolations?.filter(v => v.violation_status === 'ACTIVE').length || 0);
+              
               aiAnalysis = {
-                summary: `Property at ${property.address} has ${complianceSummary.total_violations || 0} total violations with ${complianceSummary.open_violations || 0} currently active.`,
+                summary: `Property at ${property.address} has ${totalViolations} total violations with ${openViolations} currently active. ${equipment.elevators.length} elevator(s) and ${equipment.boilers.length} boiler(s) are registered.`,
                 key_findings: [
-                  `HPD violations: ${complianceSummary.hpd_violations || 0} total, ${complianceSummary.hpd_violations_active || 0} active`,
-                  `DOB violations: ${complianceSummary.dob_violations || 0} total, ${complianceSummary.dob_violations_active || 0} active`,
-                  `Equipment status: ${complianceSummary.elevator_devices_total || 0} elevators, ${complianceSummary.boiler_devices_total || 0} boilers`
+                  `HPD violations: ${hpdViolations?.length || 0} total, ${hpdViolations?.filter(v => v.violation_status === 'OPEN').length || 0} active`,
+                  `DOB violations: ${dobViolations?.length || 0} total, ${dobViolations?.filter(v => v.violation_status === 'ACTIVE').length || 0} active`,
+                  `Equipment status: ${equipment.elevators.length} elevators, ${equipment.boilers.length} boilers`
                 ],
                 recommendations: [
-                  'Review active violations and create remediation plan',
-                  'Schedule equipment inspections as needed',
+                  ...(hpdViolations?.filter(v => v.violation_status === 'OPEN').length > 0 ? 
+                    [`Address ${hpdViolations.filter(v => v.violation_status === 'OPEN').length} open HPD violations`] : []),
+                  ...(dobViolations?.filter(v => v.violation_status === 'ACTIVE').length > 0 ? 
+                    [`Resolve ${dobViolations.filter(v => v.violation_status === 'ACTIVE').length} active DOB violations`] : []),
+                  ...(equipment.elevators.length > 0 ? 
+                    [`Schedule elevator inspections for ${equipment.elevators.length} device(s)`] : []),
+                  ...(equipment.boilers.length > 0 ? 
+                    [`Schedule boiler inspections for ${equipment.boilers.length} device(s)`] : []),
                   'Monitor compliance status regularly'
                 ],
                 risk_factors: [
                   complianceSummary.open_violations > 10 ? 'High number of active violations' : null,
                   complianceSummary.elevator_devices_active < complianceSummary.elevator_devices_total ? 'Some elevator equipment inactive' : null,
                   complianceScore < 70 ? 'Below average compliance score' : null
-                ].filter(Boolean)
+                ].filter(Boolean),
+                equipment: equipment,
+                violations_detail: violations
               };
               
             } catch (parseError) {
@@ -119,7 +178,7 @@ export const generateSampleReport = async (property, userId) => {
       risk_level: riskLevel,
       violations: JSON.stringify(violations),
       ai_analysis: JSON.stringify(aiAnalysis),
-      recommendations: JSON.stringify([
+      recommendations: JSON.stringify(aiAnalysis.recommendations || [
         'Schedule heating system inspection within 30 days',
         'Obtain proper permits for any construction work',
         'Implement quarterly maintenance checks',

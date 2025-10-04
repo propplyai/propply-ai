@@ -1458,6 +1458,204 @@ def api_get_dashboard_overview():
         return jsonify({'error': f'Failed to fetch dashboard data: {str(e)}'}), 500
 
 # ============================================
+# COMPLIANCE REPORT GENERATION ENDPOINTS
+# ============================================
+
+@app.route('/api/generate-compliance-report', methods=['POST'])
+def api_generate_compliance_report():
+    """
+    Generate comprehensive compliance report for a property
+    
+    Request body:
+    {
+        "property_id": "uuid",
+        "address": "140 West 28th Street, New York, NY 10001",
+        "city": "NYC",
+        "bin_number": "1001620" (optional)
+    }
+    """
+    try:
+        data = request.get_json()
+        property_id = data.get('property_id')
+        address = data.get('address')
+        city = data.get('city', 'NYC')
+        bin_number = data.get('bin_number')
+        
+        if not property_id or not address:
+            return jsonify({'error': 'property_id and address are required'}), 400
+        
+        logger.info(f"🏢 Generating compliance report for {address} in {city}")
+        
+        # For NYC properties, run comprehensive compliance analysis
+        if city.upper() == 'NYC':
+            try:
+                # Initialize the comprehensive compliance system
+                compliance_system = ComprehensivePropertyComplianceSystem()
+                
+                # Process the property and get compliance data
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                compliance_record = loop.run_until_complete(
+                    compliance_system.process_property(address)
+                )
+                
+                # Convert compliance record to dict for JSON serialization
+                compliance_data = {
+                    'address': compliance_record.address,
+                    'bin': compliance_record.bin,
+                    'bbl': compliance_record.bbl,
+                    'borough': compliance_record.borough,
+                    'block': compliance_record.block,
+                    'lot': compliance_record.lot,
+                    'zip_code': compliance_record.zip_code,
+                    'hpd_violations_total': compliance_record.hpd_violations_total,
+                    'hpd_violations_active': compliance_record.hpd_violations_active,
+                    'dob_violations_total': compliance_record.dob_violations_total,
+                    'dob_violations_active': compliance_record.dob_violations_active,
+                    'elevator_devices_total': compliance_record.elevator_devices_total,
+                    'elevator_devices_active': compliance_record.elevator_devices_active,
+                    'boiler_devices_total': compliance_record.boiler_devices_total,
+                    'electrical_permits_total': compliance_record.electrical_permits_total,
+                    'electrical_permits_active': compliance_record.electrical_permits_active,
+                    'hpd_compliance_score': compliance_record.hpd_compliance_score,
+                    'dob_compliance_score': compliance_record.dob_compliance_score,
+                    'elevator_compliance_score': compliance_record.elevator_compliance_score,
+                    'electrical_compliance_score': compliance_record.electrical_compliance_score,
+                    'overall_compliance_score': compliance_record.overall_compliance_score,
+                    'hpd_violations_data': compliance_record.hpd_violations_data,
+                    'dob_violations_data': compliance_record.dob_violations_data,
+                    'elevator_data': compliance_record.elevator_data,
+                    'boiler_data': compliance_record.boiler_data,
+                    'electrical_data': compliance_record.electrical_data,
+                    'processed_at': compliance_record.processed_at,
+                    'data_sources': compliance_record.data_sources
+                }
+                
+                # Save compliance data to database
+                save_compliance_data_to_db(property_id, compliance_data)
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Compliance report generated successfully',
+                    'data': compliance_data
+                })
+                
+            except Exception as e:
+                logger.error(f"Error running NYC compliance analysis: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': f'NYC compliance analysis failed: {str(e)}'
+                }), 500
+        
+        else:
+            # For non-NYC properties, return a placeholder response
+            return jsonify({
+                'success': True,
+                'message': 'Compliance analysis not available for this city',
+                'data': {
+                    'compliance_score': 85,
+                    'violations': [],
+                    'recommendations': ['Compliance analysis available for NYC properties only']
+                }
+            })
+        
+    except Exception as e:
+        logger.error(f"Error generating compliance report: {e}")
+        return jsonify({'error': f'Compliance report generation failed: {str(e)}'}), 500
+
+def save_compliance_data_to_db(property_id, compliance_data):
+    """Save compliance data to Supabase database"""
+    try:
+        # First, get or create the NYC property record
+        nyc_property_result = supabase.table('nyc_properties')\
+            .select('id')\
+            .eq('property_id', property_id)\
+            .execute()
+        
+        nyc_property_id = None
+        if nyc_property_result.data:
+            nyc_property_id = nyc_property_result.data[0]['id']
+        else:
+            # Create NYC property record
+            new_nyc_property = supabase.table('nyc_properties')\
+                .insert([{
+                    'property_id': property_id,
+                    'address': compliance_data.get('address', ''),
+                    'bin': compliance_data.get('bin'),
+                    'bbl': compliance_data.get('bbl'),
+                    'borough': compliance_data.get('borough'),
+                    'block': compliance_data.get('block'),
+                    'lot': compliance_data.get('lot'),
+                    'zip_code': compliance_data.get('zip_code')
+                }])\
+                .execute()
+            
+            if new_nyc_property.data:
+                nyc_property_id = new_nyc_property.data[0]['id']
+        
+        if not nyc_property_id:
+            raise Exception("Failed to create or find NYC property record")
+        
+        # Save compliance summary
+        compliance_summary = {
+            'nyc_property_id': nyc_property_id,
+            'compliance_score': compliance_data.get('overall_compliance_score', 85),
+            'risk_level': get_risk_level(compliance_data.get('overall_compliance_score', 85)),
+            'total_violations': (compliance_data.get('hpd_violations_total', 0) + 
+                               compliance_data.get('dob_violations_total', 0)),
+            'open_violations': (compliance_data.get('hpd_violations_active', 0) + 
+                              compliance_data.get('dob_violations_active', 0)),
+            'dob_violations': compliance_data.get('dob_violations_total', 0),
+            'hpd_violations': compliance_data.get('hpd_violations_total', 0),
+            'equipment_issues': compliance_data.get('elevator_devices_total', 0),
+            'hpd_compliance_score': compliance_data.get('hpd_compliance_score', 100),
+            'dob_compliance_score': compliance_data.get('dob_compliance_score', 100),
+            'elevator_compliance_score': compliance_data.get('elevator_compliance_score', 100),
+            'electrical_compliance_score': compliance_data.get('electrical_compliance_score', 100),
+            'overall_compliance_score': compliance_data.get('overall_compliance_score', 85),
+            'hpd_violations_total': compliance_data.get('hpd_violations_total', 0),
+            'hpd_violations_active': compliance_data.get('hpd_violations_active', 0),
+            'dob_violations_total': compliance_data.get('dob_violations_total', 0),
+            'dob_violations_active': compliance_data.get('dob_violations_active', 0),
+            'elevator_devices_total': compliance_data.get('elevator_devices_total', 0),
+            'elevator_devices_active': compliance_data.get('elevator_devices_active', 0),
+            'boiler_devices_total': compliance_data.get('boiler_devices_total', 0),
+            'electrical_permits_total': compliance_data.get('electrical_permits_total', 0),
+            'electrical_permits_active': compliance_data.get('electrical_permits_active', 0),
+            'hpd_violations_data': compliance_data.get('hpd_violations_data', '[]'),
+            'dob_violations_data': compliance_data.get('dob_violations_data', '[]'),
+            'elevator_data': compliance_data.get('elevator_data', '[]'),
+            'boiler_data': compliance_data.get('boiler_data', '[]'),
+            'electrical_data': compliance_data.get('electrical_data', '[]'),
+            'processed_at': compliance_data.get('processed_at', datetime.now().isoformat()),
+            'data_sources': compliance_data.get('data_sources', 'NYC_Open_Data,NYC_Planning_GeoSearch')
+        }
+        
+        # Upsert compliance summary
+        supabase.table('nyc_compliance_summary')\
+            .upsert(compliance_summary, on_conflict='nyc_property_id')\
+            .execute()
+        
+        logger.info('Compliance data saved successfully')
+        
+    except Exception as e:
+        logger.error(f"Error saving compliance data: {e}")
+        raise e
+
+def get_risk_level(score):
+    """Determine risk level based on compliance score"""
+    if score >= 90:
+        return 'LOW'
+    elif score >= 75:
+        return 'MEDIUM'
+    elif score >= 50:
+        return 'HIGH'
+    else:
+        return 'CRITICAL'
+
+# ============================================
 # STRIPE PAYMENT ENDPOINTS
 # ============================================
 

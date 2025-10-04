@@ -13,6 +13,8 @@ const ReportLibrary = ({ user, properties }) => {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [selectedReportType, setSelectedReportType] = useState('');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
 
   useEffect(() => {
     fetchPurchasedReports();
@@ -23,22 +25,22 @@ const ReportLibrary = ({ user, properties }) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('purchased_reports')
+        .from('compliance_reports')
         .select(`
           *,
           properties (
             address,
             city,
-            type
+            property_type
           )
         `)
         .eq('user_id', user.id)
-        .order('purchase_date', { ascending: false });
+        .order('generated_at', { ascending: false });
 
       if (error) throw error;
       setPurchasedReports(data || []);
     } catch (error) {
-      console.error('Error fetching purchased reports:', error);
+      console.error('Error fetching compliance reports:', error);
     } finally {
       setLoading(false);
     }
@@ -181,6 +183,11 @@ const ReportLibrary = ({ user, properties }) => {
     return diffDays;
   };
 
+  const viewReportDetails = (report) => {
+    setSelectedReport(report);
+    setShowReportModal(true);
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -188,10 +195,10 @@ const ReportLibrary = ({ user, properties }) => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
             <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
-              Report Library
+              Compliance Reports
             </h2>
             <p className="text-gray-600 text-lg">
-              Centralized reports with 30-day updates and 12-month entitlements
+              AI-generated compliance reports with real-time NYC data analysis
             </p>
           </div>
           <button
@@ -292,11 +299,11 @@ const ReportLibrary = ({ user, properties }) => {
                         </div>
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-4 w-4" />
-                          <span>Purchased {new Date(report.purchase_date).toLocaleDateString()}</span>
+                          <span>Generated {new Date(report.generated_at).toLocaleDateString()}</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <DollarSign className="h-4 w-4" />
-                          <span>${report.price}</span>
+                          <span>Score: {report.compliance_score}%</span>
                         </div>
                         {daysUntilExpiry !== null && (
                           <div className="flex items-center space-x-1">
@@ -308,26 +315,97 @@ const ReportLibrary = ({ user, properties }) => {
                         )}
                       </div>
 
-                      {report.report_data && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                          {report.report_data.sections?.slice(0, 4).map((section, index) => (
-                            <div key={index} className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-medium text-gray-700">{section.name}</span>
-                                <span className={`w-2 h-2 rounded-full ${
-                                  section.score >= 90 ? 'bg-green-500' :
-                                  section.score >= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}></span>
+                      {/* Parse and display real compliance data */}
+                      {(() => {
+                        const aiAnalysis = typeof report.ai_analysis === 'string' ? JSON.parse(report.ai_analysis) : report.ai_analysis;
+                        const violations = typeof report.violations === 'string' ? JSON.parse(report.violations) : report.violations;
+                        const recommendations = typeof report.recommendations === 'string' ? JSON.parse(report.recommendations) : report.recommendations;
+                        
+                        return (
+                          <div className="space-y-4">
+                            {/* Summary */}
+                            {aiAnalysis?.summary && (
+                              <div className="bg-blue-50 rounded-lg p-4">
+                                <h5 className="font-medium text-blue-900 mb-2">AI Analysis Summary</h5>
+                                <p className="text-sm text-blue-800">{aiAnalysis.summary}</p>
                               </div>
-                              <div className="text-xs text-gray-500">{section.score}%</div>
+                            )}
+
+                            {/* Key Metrics */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium text-gray-700">Overall Score</span>
+                                  <span className={`w-2 h-2 rounded-full ${
+                                    report.compliance_score >= 90 ? 'bg-green-500' :
+                                    report.compliance_score >= 70 ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`}></span>
+                                </div>
+                                <div className="text-xs text-gray-500">{report.compliance_score}%</div>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium text-gray-700">Risk Level</span>
+                                  <span className={`w-2 h-2 rounded-full ${
+                                    report.risk_level === 'LOW' ? 'bg-green-500' :
+                                    report.risk_level === 'MEDIUM' ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`}></span>
+                                </div>
+                                <div className="text-xs text-gray-500">{report.risk_level}</div>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium text-gray-700">HPD Violations</span>
+                                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                                </div>
+                                <div className="text-xs text-gray-500">{violations?.hpd?.length || 0}</div>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium text-gray-700">DOB Violations</span>
+                                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                </div>
+                                <div className="text-xs text-gray-500">{violations?.dob?.length || 0}</div>
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
+
+                            {/* Key Findings */}
+                            {aiAnalysis?.key_findings && aiAnalysis.key_findings.length > 0 && (
+                              <div className="bg-yellow-50 rounded-lg p-4">
+                                <h5 className="font-medium text-yellow-900 mb-2">Key Findings</h5>
+                                <ul className="text-sm text-yellow-800 space-y-1">
+                                  {aiAnalysis.key_findings.map((finding, index) => (
+                                    <li key={index}>• {finding}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Recommendations */}
+                            {recommendations && recommendations.length > 0 && (
+                              <div className="bg-green-50 rounded-lg p-4">
+                                <h5 className="font-medium text-green-900 mb-2">Recommendations</h5>
+                                <ul className="text-sm text-green-800 space-y-1">
+                                  {recommendations.slice(0, 3).map((rec, index) => (
+                                    <li key={index}>• {rec}</li>
+                                  ))}
+                                  {recommendations.length > 3 && (
+                                    <li className="text-green-600">... and {recommendations.length - 3} more</li>
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="flex items-center space-x-2 ml-4">
-                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                      <button 
+                        onClick={() => viewReportDetails(report)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="View Full Report"
+                      >
                         <Eye className="h-4 w-4" />
                       </button>
                       <button className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors">
@@ -442,6 +520,227 @@ const ReportLibrary = ({ user, properties }) => {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+er
+      {/* Detailed Report Modal */}
+      {showReportModal && selectedReport && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Compliance Report Details</h2>
+                  <p className="text-gray-600 mt-1">{selectedReport.properties?.address}</p>
+                </div>
+                <button
+                  onClick={() => setShowReportModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {(() => {
+                const aiAnalysis = typeof selectedReport.ai_analysis === 'string' ? JSON.parse(selectedReport.ai_analysis) : selectedReport.ai_analysis;
+                const violations = typeof selectedReport.violations === 'string' ? JSON.parse(selectedReport.violations) : selectedReport.violations;
+                const recommendations = typeof selectedReport.recommendations === 'string' ? JSON.parse(selectedReport.recommendations) : selectedReport.recommendations;
+                
+                return (
+                  <div className="space-y-6">
+                    {/* Summary */}
+                    {aiAnalysis?.summary && (
+                      <div className="bg-blue-50 rounded-xl p-6">
+                        <h3 className="font-semibold text-blue-900 mb-3">AI Analysis Summary</h3>
+                        <p className="text-blue-800">{aiAnalysis.summary}</p>
+                      </div>
+                    )}
+
+                    {/* Key Metrics */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-gray-50 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-gray-900">{selectedReport.compliance_score}%</div>
+                        <div className="text-sm text-gray-600">Overall Score</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-4 text-center">
+                        <div className={`text-2xl font-bold ${
+                          selectedReport.risk_level === 'LOW' ? 'text-green-600' :
+                          selectedReport.risk_level === 'MEDIUM' ? 'text-yellow-600' : 'text-red-600'
+                        }`}>
+                          {selectedReport.risk_level}
+                        </div>
+                        <div className="text-sm text-gray-600">Risk Level</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-orange-600">{violations?.hpd?.length || 0}</div>
+                        <div className="text-sm text-gray-600">HPD Violations</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-red-600">{violations?.dob?.length || 0}</div>
+                        <div className="text-sm text-gray-600">DOB Violations</div>
+                      </div>
+                    </div>
+
+                    {/* Key Findings */}
+                    {aiAnalysis?.key_findings && aiAnalysis.key_findings.length > 0 && (
+                      <div className="bg-yellow-50 rounded-xl p-6">
+                        <h3 className="font-semibold text-yellow-900 mb-3">Key Findings</h3>
+                        <ul className="text-yellow-800 space-y-2">
+                          {aiAnalysis.key_findings.map((finding, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="text-yellow-600 mr-2">•</span>
+                              <span>{finding}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Risk Factors */}
+                    {aiAnalysis?.risk_factors && aiAnalysis.risk_factors.length > 0 && (
+                      <div className="bg-red-50 rounded-xl p-6">
+                        <h3 className="font-semibold text-red-900 mb-3">Risk Factors</h3>
+                        <ul className="text-red-800 space-y-2">
+                          {aiAnalysis.risk_factors.map((factor, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="text-red-600 mr-2">•</span>
+                              <span>{factor}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Recommendations */}
+                    {recommendations && recommendations.length > 0 && (
+                      <div className="bg-green-50 rounded-xl p-6">
+                        <h3 className="font-semibold text-green-900 mb-3">Recommendations</h3>
+                        <ul className="text-green-800 space-y-2">
+                          {recommendations.map((rec, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="text-green-600 mr-2">•</span>
+                              <span>{rec}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Equipment Details */}
+                    {aiAnalysis?.equipment && (aiAnalysis.equipment.elevators?.length > 0 || aiAnalysis.equipment.boilers?.length > 0) && (
+                      <div className="bg-blue-50 rounded-xl p-6">
+                        <h3 className="font-semibold text-blue-900 mb-4">Equipment & Inspections</h3>
+                        
+                        {aiAnalysis.equipment.elevators?.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="font-medium text-blue-800 mb-2">Elevators ({aiAnalysis.equipment.elevators.length})</h4>
+                            <div className="space-y-2">
+                              {aiAnalysis.equipment.elevators.map((elevator, index) => (
+                                <div key={index} className="bg-white rounded-lg p-3 border-l-4 border-blue-400">
+                                  <div className="font-medium text-gray-900">Device #{elevator.device_number}</div>
+                                  <div className="text-sm text-gray-600">{elevator.device_type} - {elevator.status}</div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Last Inspection: {elevator.last_inspection} - {elevator.result}
+                                  </div>
+                                  {elevator.next_inspection && (
+                                    <div className="text-xs text-blue-600 mt-1">
+                                      Next Inspection: {elevator.next_inspection}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {aiAnalysis.equipment.boilers?.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-blue-800 mb-2">Boilers ({aiAnalysis.equipment.boilers.length})</h4>
+                            <div className="space-y-2">
+                              {aiAnalysis.equipment.boilers.map((boiler, index) => (
+                                <div key={index} className="bg-white rounded-lg p-3 border-l-4 border-blue-400">
+                                  <div className="font-medium text-gray-900">Device #{boiler.device_number}</div>
+                                  <div className="text-sm text-gray-600">{boiler.boiler_type}</div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Last Inspection: {boiler.last_inspection} - {boiler.result}
+                                  </div>
+                                  {boiler.next_inspection && (
+                                    <div className="text-xs text-blue-600 mt-1">
+                                      Next Inspection: {boiler.next_inspection}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Violations Details */}
+                    {(violations?.hpd?.length > 0 || violations?.dob?.length > 0) && (
+                      <div className="bg-gray-50 rounded-xl p-6">
+                        <h3 className="font-semibold text-gray-900 mb-4">Violations Details</h3>
+                        
+                        {violations?.hpd?.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="font-medium text-orange-800 mb-2">HPD Violations ({violations.hpd.length})</h4>
+                            <div className="space-y-2">
+                              {violations.hpd.map((violation, index) => (
+                                <div key={index} className="bg-white rounded-lg p-3 border-l-4 border-orange-400">
+                                  <div className="font-medium text-gray-900">{violation.type || 'HPD Violation'}</div>
+                                  <div className="text-sm text-gray-600">{violation.description}</div>
+                                  <div className="text-xs text-gray-500 mt-1">Status: {violation.status}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {violations?.dob?.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-red-800 mb-2">DOB Violations ({violations.dob.length})</h4>
+                            <div className="space-y-2">
+                              {violations.dob.map((violation, index) => (
+                                <div key={index} className="bg-white rounded-lg p-3 border-l-4 border-red-400">
+                                  <div className="font-medium text-gray-900">{violation.type || 'DOB Violation'}</div>
+                                  <div className="text-sm text-gray-600">{violation.description}</div>
+                                  <div className="text-xs text-gray-500 mt-1">Status: {violation.status}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Report Metadata */}
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <h3 className="font-semibold text-gray-900 mb-3">Report Information</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Generated:</span>
+                          <span className="ml-2 text-gray-600">{new Date(selectedReport.generated_at).toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Report Type:</span>
+                          <span className="ml-2 text-gray-600">{selectedReport.report_type.replace('_', ' ')}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Status:</span>
+                          <span className="ml-2 text-gray-600">{selectedReport.status}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">City:</span>
+                          <span className="ml-2 text-gray-600">{selectedReport.properties?.city}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

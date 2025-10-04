@@ -135,6 +135,48 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
     setShowPropertyModal(true);
   };
 
+  const handleGenerateReport = async (property) => {
+    try {
+      console.log('Generating compliance report for:', property.address);
+      
+      // Show loading state
+      setLoading(true);
+      
+      // Call the API to generate compliance report
+      const response = await fetch('/api/generate-compliance-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          property_id: property.id,
+          address: property.address,
+          city: property.city,
+          bin_number: property.bin_number
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate compliance report');
+      }
+      
+      const result = await response.json();
+      console.log('Compliance report generated:', result);
+      
+      // Show success message
+      alert('Compliance report generated successfully! Check the Reports tab to view it.');
+      
+      // Refresh properties to show updated compliance data
+      await fetchProperties();
+      
+    } catch (error) {
+      console.error('Error generating compliance report:', error);
+      alert('Failed to generate compliance report. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchPropertyDataFromAPI = async (address) => {
     try {
       setFetchingPropertyData(true);
@@ -685,14 +727,11 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
                             <td className="px-6 py-4">
                               <div className="flex items-center space-x-2">
                                 <button
-                                  onClick={() => {
-                                    setSelectedProperty(property);
-                                    fetchPropertyDetails(property);
-                                  }}
-                                  className="p-2 text-[#94A3B8] hover:text-[#3B82F6] hover:bg-corporate-500/20 rounded-lg transition-all duration-300 group-hover:shadow-glow"
-                                  title="View Details"
+                                  onClick={() => handleGenerateReport(property)}
+                                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                                  title="Generate Compliance Report"
                                 >
-                                  <Eye className="h-5 w-5" />
+                                  Generate Report
                                 </button>
                               </div>
                             </td>

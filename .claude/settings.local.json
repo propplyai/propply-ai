@@ -17,7 +17,9 @@
       "Bash(done)",
       "Bash(mv:*)",
       "Bash(rm:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Read(//var/folders/3d/kkgtnkrj13l0tdf86t7ns2380000gp/T/TemporaryItems/NSIRD_screencaptureui_y8tYVJ/**)",
+      "Read(//var/folders/3d/kkgtnkrj13l0tdf86t7ns2380000gp/T/TemporaryItems/NSIRD_screencaptureui_NjWC56/**)"
     ],
     "deny": []
   }
