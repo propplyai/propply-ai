@@ -5,11 +5,8 @@ services:
     buildCommand: |
       # Install Python dependencies
       pip install -r requirements.txt
-      # Install Node.js dependencies and build React app
-      curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-      apt-get install -y nodejs
-      npm ci --legacy-peer-deps
-      npm run build
+      # Build React app using pre-built assets
+      echo "Using pre-built React assets from build/ directory"
     startCommand: gunicorn propply_app:app --bind 0.0.0.0:$PORT --workers 4 --timeout 120
     envVars:
       - key: PYTHON_VERSION

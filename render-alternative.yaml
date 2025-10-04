@@ -1,0 +1,32 @@
+# Alternative Render configuration using Node.js buildpack
+# This approach builds the React app during deployment
+services:
+  - type: web
+    name: propply-ai-alternative
+    runtime: node
+    buildCommand: |
+      # Install Node.js dependencies
+      npm ci --legacy-peer-deps
+      # Build React app
+      npm run build
+      # Install Python dependencies for backend
+      pip install -r requirements.txt
+    startCommand: |
+      # Start both frontend and backend
+      npm run serve &
+      gunicorn propply_app:app --bind 0.0.0.0:$PORT --workers 4 --timeout 120
+    envVars:
+      - key: NODE_VERSION
+        value: 18.20.5
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: FLASK_ENV
+        value: production
+      - key: NODE_ENV
+        value: production
+      - key: CI
+        value: false
+      - key: GENERATE_SOURCEMAP
+        value: false
+      - key: REACT_APP_API_URL
+        value: https://propply-ai.onrender.com
