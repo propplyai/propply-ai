@@ -14,6 +14,10 @@ import logging
 import requests
 from datetime import datetime, timedelta
 from supabase import create_client, Client
+from dotenv import load_dotenv
+
+# Load environment variables from .env.local
+load_dotenv('.env.local')
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
