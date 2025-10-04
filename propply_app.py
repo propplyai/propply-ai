@@ -1412,8 +1412,12 @@ def api_generate_compliance_report():
                     'data_sources': compliance_record.data_sources
                 }
                 
-                # Save compliance data to database
-                save_compliance_data_to_db(property_id, compliance_data)
+                # Save compliance data to database (only if property exists)
+                try:
+                    save_compliance_data_to_db(property_id, compliance_data)
+                except Exception as db_error:
+                    logger.warning(f"Could not save compliance data to database: {db_error}")
+                    # Continue with response even if database save fails
                 
                 return jsonify({
                     'success': True,
@@ -1447,6 +1451,16 @@ def api_generate_compliance_report():
 def save_compliance_data_to_db(property_id, compliance_data):
     """Save compliance data to Supabase database"""
     try:
+        # Check if property exists in properties table first
+        property_exists = supabase.table('properties')\
+            .select('id')\
+            .eq('id', property_id)\
+            .execute()
+        
+        if not property_exists.data:
+            logger.warning(f"Property {property_id} not found in properties table, skipping database save")
+            return
+        
         # First, get or create the NYC property record
         nyc_property_result = supabase.table('nyc_properties')\
             .select('id')\
