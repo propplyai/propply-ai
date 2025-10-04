@@ -143,7 +143,7 @@ const MVPDashboard = ({ user, onLogout, initialTab = 'dashboard' }) => {
       setLoading(true);
       
       // Call the API to generate compliance report
-      const response = await fetch('/api/generate-compliance-report', {
+      const response = await fetch('http://localhost:5001/api/generate-compliance-report', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
