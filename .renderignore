@@ -1,0 +1,9 @@
+# Ignore files that might interfere with Render deployment
+railway.json
+render-alternative.yaml
+scripts/
+docs/
+*.md
+__pycache__/
+node_modules/
+.git/
