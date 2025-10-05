@@ -1072,6 +1072,34 @@ def api_health_check():
         'version': '2.0'
     })
 
+@app.route('/api/debug/paths')
+def api_debug_paths():
+    """Debug endpoint to check file paths"""
+    import os
+    current_dir = os.getcwd()
+    script_dir = os.path.dirname(__file__)
+    
+    build_paths = [
+        os.path.join(current_dir, 'build', 'index.html'),
+        os.path.join(script_dir, 'build', 'index.html'),
+        'build/index.html'
+    ]
+    
+    results = {}
+    for path in build_paths:
+        results[path] = {
+            'exists': os.path.exists(path),
+            'is_file': os.path.isfile(path) if os.path.exists(path) else False,
+            'size': os.path.getsize(path) if os.path.exists(path) else 0
+        }
+    
+    return jsonify({
+        'current_dir': current_dir,
+        'script_dir': script_dir,
+        'build_paths': results,
+        'build_dir_contents': os.listdir('build') if os.path.exists('build') else 'build directory not found'
+    })
+
 # ============================================
 # FRONTEND INTEGRATION ENDPOINTS
 # ============================================
@@ -1792,9 +1820,19 @@ def serve_react_app(path):
     
     # Otherwise serve the React app
     try:
-        return send_file('build/index.html')
-    except FileNotFoundError:
-        return jsonify({'error': 'React app not built. Please run npm run build first.'}), 500
+        import os
+        build_path = os.path.join(os.getcwd(), 'build', 'index.html')
+        if os.path.exists(build_path):
+            return send_file(build_path)
+        else:
+            # Try alternative path
+            alt_path = os.path.join(os.path.dirname(__file__), 'build', 'index.html')
+            if os.path.exists(alt_path):
+                return send_file(alt_path)
+            else:
+                return jsonify({'error': f'React app not found. Tried: {build_path} and {alt_path}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Error serving React app: {str(e)}'}), 500
 
 @app.errorhandler(404)
 def not_found(error):
@@ -1804,9 +1842,19 @@ def not_found(error):
         return jsonify({'error': 'API endpoint not found'}), 404
     # For other routes, serve React app (let React handle routing)
     try:
-        return send_file('build/index.html')
-    except FileNotFoundError:
-        return jsonify({'error': 'Application not found'}), 404
+        import os
+        build_path = os.path.join(os.getcwd(), 'build', 'index.html')
+        if os.path.exists(build_path):
+            return send_file(build_path)
+        else:
+            # Try alternative path
+            alt_path = os.path.join(os.path.dirname(__file__), 'build', 'index.html')
+            if os.path.exists(alt_path):
+                return send_file(alt_path)
+            else:
+                return jsonify({'error': f'Application not found. Tried: {build_path} and {alt_path}'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Error serving application: {str(e)}'}), 500
 
 @app.errorhandler(500)
 def internal_error(error):
