@@ -1,0 +1,23 @@
+{
+  "name": "Propply AI - Property Compliance Management",
+  "short_name": "Propply AI",
+  "description": "Intelligent Property Compliance Management for NYC & Philadelphia",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "propply-logo-transparent.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "propply-logo-transparent.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

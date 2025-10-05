@@ -4,7 +4,7 @@ node_modules/
 .pnp.js
 
 # Production builds
-/build
+# /build  # Commented out - needed for deployment
 /dist
 
 # Environment variables
