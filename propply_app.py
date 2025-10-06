@@ -1800,7 +1800,35 @@ def stripe_webhook():
 @app.route('/static/<path:path>')
 def serve_static(path):
     """Serve static assets from build/static directory"""
-    return send_from_directory('build/static', path)
+    try:
+        return send_from_directory('build/static', path)
+    except FileNotFoundError:
+        # Try alternative path
+        import os
+        alt_path = os.path.join(os.getcwd(), 'build', 'static', path)
+        if os.path.exists(alt_path):
+            return send_file(alt_path)
+        else:
+            return jsonify({'error': f'Static file not found: {path}'}), 404
+
+# Serve favicon and other root-level static files
+@app.route('/favicon.ico')
+@app.route('/favicon.png')
+@app.route('/favicon.svg')
+@app.route('/manifest.json')
+@app.route('/asset-manifest.json')
+def serve_root_static():
+    """Serve root-level static files"""
+    import os
+    filename = request.path.lstrip('/')
+    try:
+        return send_from_directory('build', filename)
+    except FileNotFoundError:
+        alt_path = os.path.join(os.getcwd(), 'build', filename)
+        if os.path.exists(alt_path):
+            return send_file(alt_path)
+        else:
+            return jsonify({'error': f'File not found: {filename}'}), 404
 
 # Serve React app for all non-API routes
 @app.route('/', defaults={'path': ''})
