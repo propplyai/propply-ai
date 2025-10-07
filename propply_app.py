@@ -1800,15 +1800,21 @@ def stripe_webhook():
 @app.route('/static/<path:path>')
 def serve_static(path):
     """Serve static assets from build/static directory"""
+    print(f"DEBUG: Serving static file: {path}")
     try:
-        return send_from_directory('build/static', path)
+        response = send_from_directory('build/static', path)
+        print(f"DEBUG: Successfully served static file: {path}")
+        return response
     except FileNotFoundError:
+        print(f"DEBUG: Static file not found in build/static: {path}")
         # Try alternative path
         import os
         alt_path = os.path.join(os.getcwd(), 'build', 'static', path)
         if os.path.exists(alt_path):
+            print(f"DEBUG: Found static file at alternative path: {alt_path}")
             return send_file(alt_path)
         else:
+            print(f"DEBUG: Static file not found anywhere: {path}")
             return jsonify({'error': f'Static file not found: {path}'}), 404
 
 # Serve favicon and other root-level static files
@@ -1853,12 +1859,15 @@ def serve_react_app():
 @app.route('/<path:path>')
 def serve_react_router(path):
     """Serve React app for client-side routing"""
+    print(f"DEBUG: Catch-all route called for: {path}")
     # Don't serve React app for API routes
     if path.startswith('api/'):
+        print(f"DEBUG: API route requested: {path}")
         return jsonify({'error': 'API endpoint not found'}), 404
     
     # Don't serve React app for static files
     if path.startswith('static/'):
+        print(f"DEBUG: Static file route requested: {path}")
         return jsonify({'error': 'Static file not found'}), 404
     
     # Serve React app for all other routes (React Router will handle them)
