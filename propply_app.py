@@ -1830,23 +1830,10 @@ def serve_root_static():
         else:
             return jsonify({'error': f'File not found: {filename}'}), 404
 
-# Serve React app for all non-API routes
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_react_app(path):
-    """Serve the React app for all non-API routes"""
-    # Don't serve React app for API routes
-    if path.startswith('api/'):
-        return jsonify({'error': 'API endpoint not found'}), 404
-    
-    # Check if the path is a static file request
-    if path and '.' in path.split('/')[-1]:
-        try:
-            return send_from_directory('build', path)
-        except FileNotFoundError:
-            pass
-    
-    # Otherwise serve the React app
+# Serve React app for root route only
+@app.route('/')
+def serve_react_app():
+    """Serve the React app for the root route"""
     try:
         import os
         build_path = os.path.join(os.getcwd(), 'build', 'index.html')
@@ -1861,6 +1848,34 @@ def serve_react_app(path):
                 return jsonify({'error': f'React app not found. Tried: {build_path} and {alt_path}'}), 500
     except Exception as e:
         return jsonify({'error': f'Error serving React app: {str(e)}'}), 500
+
+# Catch-all route for React Router (must be last)
+@app.route('/<path:path>')
+def serve_react_router(path):
+    """Serve React app for client-side routing"""
+    # Don't serve React app for API routes
+    if path.startswith('api/'):
+        return jsonify({'error': 'API endpoint not found'}), 404
+    
+    # Don't serve React app for static files
+    if path.startswith('static/'):
+        return jsonify({'error': 'Static file not found'}), 404
+    
+    # Serve React app for all other routes (React Router will handle them)
+    try:
+        import os
+        build_path = os.path.join(os.getcwd(), 'build', 'index.html')
+        if os.path.exists(build_path):
+            return send_file(build_path)
+        else:
+            # Try alternative path
+            alt_path = os.path.join(os.path.dirname(__file__), 'build', 'index.html')
+            if os.path.exists(alt_path):
+                return send_file(alt_path)
+            else:
+                return jsonify({'error': f'Application not found. Tried: {build_path} and {alt_path}'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Error serving application: {str(e)}'}), 500
 
 @app.errorhandler(404)
 def not_found(error):
