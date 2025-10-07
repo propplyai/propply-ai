@@ -32,7 +32,7 @@ from simple_vendor_marketplace import SimpleVendorMarketplace
 from stripe_service import stripe_service
 
 app = Flask(__name__, 
-           static_folder='build', 
+           static_folder='build/static', 
            static_url_path='/static',
            template_folder='build')
 CORS(app)  # Enable CORS for React frontend
@@ -1796,26 +1796,7 @@ def stripe_webhook():
         print(f"Webhook error: {e}")
         return jsonify({'error': str(e)}), 500
 
-# Serve static files from build folder
-@app.route('/static/<path:path>')
-def serve_static(path):
-    """Serve static assets from build/static directory"""
-    print(f"DEBUG: Serving static file: {path}")
-    try:
-        response = send_from_directory('build/static', path)
-        print(f"DEBUG: Successfully served static file: {path}")
-        return response
-    except FileNotFoundError:
-        print(f"DEBUG: Static file not found in build/static: {path}")
-        # Try alternative path
-        import os
-        alt_path = os.path.join(os.getcwd(), 'build', 'static', path)
-        if os.path.exists(alt_path):
-            print(f"DEBUG: Found static file at alternative path: {alt_path}")
-            return send_file(alt_path)
-        else:
-            print(f"DEBUG: Static file not found anywhere: {path}")
-            return jsonify({'error': f'Static file not found: {path}'}), 404
+# Static files are now handled automatically by Flask's static_folder configuration
 
 # Serve favicon and other root-level static files
 @app.route('/favicon.ico')
