@@ -1185,6 +1185,104 @@ def api_get_compliance_report(report_id):
         logger.error(f"Error fetching compliance report: {e}")
         return jsonify({'error': f'Failed to fetch report: {str(e)}'}), 500
 
+@app.route('/api/compliance-reports/<report_id>/dismiss-violation', methods=['POST'])
+def api_dismiss_violation(report_id):
+    """Dismiss an individual violation and recalculate compliance scores"""
+    try:
+        data = request.get_json()
+        violation_type = data.get('violation_type')  # 'HPD' or 'DOB'
+        violation_id = data.get('violation_id')
+        violation_data = data.get('violation_data', {})
+        dismissed_by = data.get('dismissed_by', 'user')
+        dismiss_reason = data.get('dismiss_reason', '')
+        
+        if not violation_type or not violation_id:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        if violation_type not in ['HPD', 'DOB']:
+            return jsonify({'error': 'Invalid violation type'}), 400
+        
+        # Insert dismissed violation record
+        dismissed_record = supabase.table('dismissed_violations').insert({
+            'report_id': report_id,
+            'violation_type': violation_type,
+            'violation_id': violation_id,
+            'violation_data': violation_data,
+            'dismissed_by': dismissed_by,
+            'dismiss_reason': dismiss_reason
+        }).execute()
+        
+        # Recalculate compliance scores using database function
+        result = supabase.rpc('recalculate_compliance_score', {
+            'report_uuid': report_id
+        }).execute()
+        
+        logger.info(f"Violation dismissed: {violation_type} {violation_id} from report {report_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Violation dismissed successfully',
+            'recalculation': result.data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error dismissing violation: {e}")
+        return jsonify({'error': f'Failed to dismiss violation: {str(e)}'}), 500
+
+@app.route('/api/compliance-reports/<report_id>/restore-violation', methods=['POST'])
+def api_restore_violation(report_id):
+    """Restore a dismissed violation and recalculate compliance scores"""
+    try:
+        data = request.get_json()
+        violation_type = data.get('violation_type')  # 'HPD' or 'DOB'
+        violation_id = data.get('violation_id')
+        
+        if not violation_type or not violation_id:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Delete dismissed violation record
+        supabase.table('dismissed_violations')\
+            .delete()\
+            .eq('report_id', report_id)\
+            .eq('violation_type', violation_type)\
+            .eq('violation_id', violation_id)\
+            .execute()
+        
+        # Recalculate compliance scores using database function
+        result = supabase.rpc('recalculate_compliance_score', {
+            'report_uuid': report_id
+        }).execute()
+        
+        logger.info(f"Violation restored: {violation_type} {violation_id} from report {report_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Violation restored successfully',
+            'recalculation': result.data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error restoring violation: {e}")
+        return jsonify({'error': f'Failed to restore violation: {str(e)}'}), 500
+
+@app.route('/api/compliance-reports/<report_id>/dismissed-violations', methods=['GET'])
+def api_get_dismissed_violations(report_id):
+    """Get all dismissed violations for a report"""
+    try:
+        dismissed = supabase.table('dismissed_violations')\
+            .select('*')\
+            .eq('report_id', report_id)\
+            .execute()
+        
+        return jsonify({
+            'success': True,
+            'dismissed_violations': dismissed.data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching dismissed violations: {e}")
+        return jsonify({'error': f'Failed to fetch dismissed violations: {str(e)}'}), 500
+
 @app.route('/api/properties/<property_id>/compliance-data', methods=['GET'])
 def api_get_property_compliance_data(property_id):
     """Get comprehensive compliance data for a property"""

@@ -5,7 +5,7 @@ import {
   FileText, Download, Eye, Share, Calendar, Building, Filter,
   Search, Plus, BarChart3, TrendingUp, AlertTriangle, CheckCircle,
   Clock, Archive, Star, Tag, MapPin, Shield, Flame, Wrench, Home,
-  ChevronDown, ChevronUp, RefreshCw, MessageCircle, Bot, Send
+  ChevronDown, ChevronUp, RefreshCw, MessageCircle, Bot, Send, X, RotateCcw
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -24,6 +24,8 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
   const [aiResponse, setAiResponse] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [realTimeUpdates, setRealTimeUpdates] = useState(false);
+  const [dismissedViolations, setDismissedViolations] = useState(new Set());
+  const [dismissing, setDismissing] = useState(false);
 
   useEffect(() => {
     if (reportId) {
@@ -225,6 +227,102 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
       console.error('Error syncing property data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const dismissViolation = async (violationType, violationId, violationData) => {
+    try {
+      setDismissing(true);
+      const apiUrl = process.env.REACT_APP_API_URL || '';
+      
+      const response = await fetch(`${apiUrl}/api/compliance-reports/${reportId}/dismiss-violation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          violation_type: violationType,
+          violation_id: violationId,
+          violation_data: violationData,
+          dismissed_by: 'user'
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ Violation dismissed:', result);
+        
+        // Add to dismissed set
+        setDismissedViolations(prev => new Set([...prev, `${violationType}-${violationId}`]));
+        
+        // Update report with new scores from recalculation
+        if (result.recalculation) {
+          setReport(prevReport => ({
+            ...prevReport,
+            hpd_violations_active: result.recalculation.hpd_active,
+            hpd_compliance_score: result.recalculation.hpd_score,
+            dob_violations_active: result.recalculation.dob_active,
+            dob_compliance_score: result.recalculation.dob_score,
+            compliance_score: result.recalculation.overall_score
+          }));
+        }
+      } else {
+        console.error('❌ Failed to dismiss violation:', result.error);
+        alert('Failed to dismiss violation: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error dismissing violation:', error);
+      alert('Error dismissing violation');
+    } finally {
+      setDismissing(false);
+    }
+  };
+
+  const restoreViolation = async (violationType, violationId) => {
+    try {
+      setDismissing(true);
+      const apiUrl = process.env.REACT_APP_API_URL || '';
+      
+      const response = await fetch(`${apiUrl}/api/compliance-reports/${reportId}/restore-violation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          violation_type: violationType,
+          violation_id: violationId
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ Violation restored:', result);
+        
+        // Remove from dismissed set
+        setDismissedViolations(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(`${violationType}-${violationId}`);
+          return newSet;
+        });
+        
+        // Update report with new scores from recalculation
+        if (result.recalculation) {
+          setReport(prevReport => ({
+            ...prevReport,
+            hpd_violations_active: result.recalculation.hpd_active,
+            hpd_compliance_score: result.recalculation.hpd_score,
+            dob_violations_active: result.recalculation.dob_active,
+            dob_compliance_score: result.recalculation.dob_score,
+            compliance_score: result.recalculation.overall_score
+          }));
+        }
+      } else {
+        console.error('❌ Failed to restore violation:', result.error);
+        alert('Failed to restore violation: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error restoring violation:', error);
+      alert('Error restoring violation');
+    } finally {
+      setDismissing(false);
     }
   };
 
@@ -533,26 +631,59 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                 <div className="bg-gray-50 p-6 border-t-2 border-gray-200">
                   {hpdViolationsData && hpdViolationsData.length > 0 ? (
                     <div className="space-y-3">
-                      {hpdViolationsData.slice(0, 10).map((violation, idx) => (
-                        <div key={idx} className="bg-white p-4 rounded-lg border border-purple-100">
-                          <div className="flex items-start justify-between mb-2">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              violation.violation_class === 'A' ? 'bg-red-100 text-red-800' :
-                              violation.violation_class === 'B' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-blue-100 text-blue-800'
-                            }`}>
-                              Class {violation.violation_class || 'N/A'}
-                            </span>
-                            <span className="text-xs text-gray-500">{violation.inspection_date || 'N/A'}</span>
+                      {hpdViolationsData.slice(0, 10).map((violation, idx) => {
+                        const violationKey = `HPD-${violation.violationid || violation.violation_id}`;
+                        const isDismissed = dismissedViolations.has(violationKey);
+                        
+                        return (
+                          <div key={idx} className={`bg-white p-4 rounded-lg border ${isDismissed ? 'border-gray-300 opacity-50' : 'border-purple-100'}`}>
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center space-x-2">
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  violation.violation_class === 'A' ? 'bg-red-100 text-red-800' :
+                                  violation.violation_class === 'B' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-blue-100 text-blue-800'
+                                }`}>
+                                  Class {violation.violation_class || 'N/A'}
+                                </span>
+                                {isDismissed && (
+                                  <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                    Dismissed
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs text-gray-500">{violation.inspectiondate || violation.inspection_date || 'N/A'}</span>
+                                {!isDismissed ? (
+                                  <button
+                                    onClick={() => dismissViolation('HPD', violation.violationid || violation.violation_id, violation)}
+                                    disabled={dismissing}
+                                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                                    title="Dismiss this violation"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => restoreViolation('HPD', violation.violationid || violation.violation_id)}
+                                    disabled={dismissing}
+                                    className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50"
+                                    title="Restore this violation"
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-sm text-gray-700">
+                              Status: {violation.violationstatus || violation.violation_status || 'N/A'}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              ID: {violation.violationid || violation.violation_id || 'N/A'}
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-700">
-                            Status: {violation.violation_status || 'N/A'}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            ID: {violation.violation_id || 'N/A'}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
@@ -590,31 +721,62 @@ const ComplianceReportPage = ({ reportId, onClose }) => {
                 <div className="bg-gray-50 p-6 border-t-2 border-gray-200">
                   {dobViolationsData && dobViolationsData.length > 0 ? (
                     <div className="space-y-3">
-                      {dobViolationsData.slice(0, 10).map((violation, idx) => (
-                        <div key={idx} className="bg-white p-4 rounded-lg border border-red-100">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                violation.violation_category === 'FIRE' ? 'bg-red-100 text-red-800' :
-                                violation.violation_category === 'STRUCTURAL' ? 'bg-orange-100 text-orange-800' :
-                                'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {violation.violation_category || 'GENERAL'}
-                              </span>
+                      {dobViolationsData.slice(0, 10).map((violation, idx) => {
+                        const violationKey = `DOB-${violation.violation_number || violation.violationnumber}`;
+                        const isDismissed = dismissedViolations.has(violationKey);
+                        
+                        return (
+                          <div key={idx} className={`bg-white p-4 rounded-lg border ${isDismissed ? 'border-gray-300 opacity-50' : 'border-red-100'}`}>
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center space-x-2">
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  violation.violation_category === 'FIRE' ? 'bg-red-100 text-red-800' :
+                                  violation.violation_category === 'STRUCTURAL' ? 'bg-orange-100 text-orange-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {violation.violation_category || 'GENERAL'}
+                                </span>
+                                {isDismissed && (
+                                  <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                    Dismissed
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs text-gray-500">{violation.issue_date || violation.issuedate || 'N/A'}</span>
+                                {!isDismissed ? (
+                                  <button
+                                    onClick={() => dismissViolation('DOB', violation.violation_number || violation.violationnumber, violation)}
+                                    disabled={dismissing}
+                                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                                    title="Dismiss this violation"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => restoreViolation('DOB', violation.violation_number || violation.violationnumber)}
+                                    disabled={dismissing}
+                                    className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50"
+                                    title="Restore this violation"
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            <span className="text-xs text-gray-500">{violation.issue_date || 'N/A'}</span>
+                            <div className="text-sm font-medium text-gray-900 mb-1">
+                              {violation.violation_type || 'N/A'}
+                            </div>
+                            <div className="text-xs text-gray-600">
+                              ID: {violation.violation_number || violation.violationnumber || 'N/A'}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Status: {violation.status || 'N/A'}
+                            </div>
                           </div>
-                          <div className="text-sm font-medium text-gray-900 mb-1">
-                            {violation.violation_type || 'N/A'}
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            ID: {violation.violation_number || 'N/A'}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            Status: {violation.status || 'N/A'}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500">

@@ -344,17 +344,48 @@ class ComprehensivePropertyComplianceSystem:
                 )
                 
                 if violations_data and len(violations_data) > 0:
-                    # Filter data to match the correct BIN when using block/lot search
-                    if strategy_name == "Block/Lot" and identifiers.bin:
-                        filtered_data = [record for record in violations_data if record.get('bin') == identifiers.bin]
-                        if not filtered_data:
-                            print(f"   ⚠️  Found {len(violations_data)} HPD violations in block/lot {identifiers.block}/{identifiers.lot}, but none match BIN {identifiers.bin}")
-                            continue  # Try next strategy
-                        violations_data = filtered_data
+                    # ENHANCED BIN VALIDATION: Apply to ALL strategies (not just Block/Lot)
+                    if identifiers.bin and strategy_name != "BIN":
+                        # Log all BINs found in results for debugging
+                        found_bins = set(r.get('bin') for r in violations_data if r.get('bin'))
+                        
+                        if identifiers.bin not in found_bins:
+                            print(f"   ⚠️  BIN {identifiers.bin} not found in {strategy_name} results")
+                            print(f"   Found BINs: {found_bins}")
+                        
+                        # Filter to matching BIN
+                        filtered_data = [r for r in violations_data if r.get('bin') == identifiers.bin]
+                        
+                        # Smart filtering: Check if we're losing all data
+                        if not filtered_data and violations_data:
+                            # Verify violations are on same block/lot
+                            same_location = all(
+                                r.get('block') == identifiers.block and 
+                                r.get('lot') == identifiers.lot 
+                                for r in violations_data if r.get('block') and r.get('lot')
+                            )
+                            
+                            # Keep data if: small number + same location (possible multi-building lot)
+                            if same_location and len(violations_data) < 10:
+                                print(f"   ⚠️  Keeping {len(violations_data)} violations (possible multi-building lot)")
+                                # Don't filter - might be legitimate
+                            else:
+                                # Likely wrong data - filter it out
+                                print(f"   ❌ Filtering out {len(violations_data)} violations (BIN mismatch)")
+                                violations_data = []
+                        else:
+                            # We have matching data - use it
+                            if filtered_data:
+                                print(f"   ✅ BIN validation: {len(filtered_data)}/{len(violations_data)} violations match BIN {identifiers.bin}")
+                            violations_data = filtered_data
                     
-                    hpd_violations = violations_data  # Already a list of dicts
-                    print(f"✅ HPD Violations - Found {len(hpd_violations)} ACTIVE violations using {strategy_name}")
-                    break
+                    if violations_data and len(violations_data) > 0:
+                        hpd_violations = violations_data  # Already a list of dicts
+                        print(f"✅ HPD Violations - Found {len(hpd_violations)} ACTIVE violations using {strategy_name}")
+                        break
+                    else:
+                        print(f"❌ HPD Violations - No matching results after BIN validation")
+                        continue
                 else:
                     print(f"❌ HPD Violations - No active results with {strategy_name}")
                     
@@ -434,17 +465,48 @@ class ComprehensivePropertyComplianceSystem:
                 )
                 
                 if violations_data and len(violations_data) > 0:
-                    # Filter data to match the correct BIN when using block/lot search
-                    if strategy_name == "Block/Lot" and identifiers.bin:
-                        filtered_data = [record for record in violations_data if record.get('bin') == identifiers.bin]
-                        if not filtered_data:
-                            print(f"   ⚠️  Found {len(violations_data)} DOB violations in block/lot {identifiers.block}/{identifiers.lot}, but none match BIN {identifiers.bin}")
-                            continue  # Try next strategy
-                        violations_data = filtered_data
+                    # ENHANCED BIN VALIDATION: Apply to ALL strategies (not just Block/Lot)
+                    if identifiers.bin and strategy_name != "BIN":
+                        # Log all BINs found in results for debugging
+                        found_bins = set(r.get('bin') for r in violations_data if r.get('bin'))
+                        
+                        if identifiers.bin not in found_bins:
+                            print(f"   ⚠️  BIN {identifiers.bin} not found in {strategy_name} results")
+                            print(f"   Found BINs: {found_bins}")
+                        
+                        # Filter to matching BIN
+                        filtered_data = [r for r in violations_data if r.get('bin') == identifiers.bin]
+                        
+                        # Smart filtering: Check if we're losing all data
+                        if not filtered_data and violations_data:
+                            # Verify violations are on same block/lot
+                            same_location = all(
+                                r.get('block') == identifiers.block and 
+                                r.get('lot') == identifiers.lot 
+                                for r in violations_data if r.get('block') and r.get('lot')
+                            )
+                            
+                            # Keep data if: small number + same location (possible multi-building lot)
+                            if same_location and len(violations_data) < 10:
+                                print(f"   ⚠️  Keeping {len(violations_data)} violations (possible multi-building lot)")
+                                # Don't filter - might be legitimate
+                            else:
+                                # Likely wrong data - filter it out
+                                print(f"   ❌ Filtering out {len(violations_data)} violations (BIN mismatch)")
+                                violations_data = []
+                        else:
+                            # We have matching data - use it
+                            if filtered_data:
+                                print(f"   ✅ BIN validation: {len(filtered_data)}/{len(violations_data)} violations match BIN {identifiers.bin}")
+                            violations_data = filtered_data
                     
-                    dob_violations = violations_data  # Already a list of dicts
-                    print(f"✅ DOB Violations - Found {len(dob_violations)} ACTIVE violations using {strategy_name}")
-                    break
+                    if violations_data and len(violations_data) > 0:
+                        dob_violations = violations_data  # Already a list of dicts
+                        print(f"✅ DOB Violations - Found {len(dob_violations)} ACTIVE violations using {strategy_name}")
+                        break
+                    else:
+                        print(f"❌ DOB Violations - No matching results after BIN validation")
+                        continue
                 else:
                     print(f"❌ DOB Violations - No active results with {strategy_name}")
                     
